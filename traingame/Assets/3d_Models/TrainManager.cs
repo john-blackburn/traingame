@@ -16,6 +16,12 @@ public class TrainManager : MonoBehaviour {
 		Debug.Log("width : "+_trCollider.bounds.size.x);
 
 	}
-	
+
+	void Update()
+	{
+		Vector3 pos = transform.position;
+		pos.z -= 0.1f;
+		transform.position = pos;
+	}
 
 }
