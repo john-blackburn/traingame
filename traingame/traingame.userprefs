@@ -1,9 +1,10 @@
 ﻿<Properties>
   <MonoDevelop.Ide.Workspace ActiveConfiguration="Debug" PreferredExecutionTarget="MonoDevelop.Default" />
-  <MonoDevelop.Ide.Workbench ActiveDocument="Assets\3d_Models\TrainManager.cs">
+  <MonoDevelop.Ide.Workbench ActiveDocument="Assets\3d_Models\GameController.cs">
     <Files>
-      <File FileName="Assets\3d_Models\TrainManager.cs" Line="60" Column="17" />
-      <File FileName="Assets\GameController.cs" Line="13" Column="1" />
+      <File FileName="Assets\3d_Models\GameController.cs" Line="72" Column="1" />
+      <File FileName="Assets\3d_Models\TrainManager.cs" Line="13" Column="2" />
+      <File FileName="Assets\pillarController.cs" Line="15" Column="1" />
     </Files>
   </MonoDevelop.Ide.Workbench>
   <MonoDevelop.Ide.DebuggingService.Breakpoints>
