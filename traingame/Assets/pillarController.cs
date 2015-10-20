@@ -2,10 +2,12 @@
 using System.Collections;
 
 public class pillarController : MonoBehaviour {
+
+	private float distMoved;
 	
 	// Use this for initialization
 	void Start () {
-	
+		distMoved = 0;
 	}
 	
 	// Update is called once per frame
@@ -14,7 +16,9 @@ public class pillarController : MonoBehaviour {
 		pos.z -= 0.2f;
 		transform.position = pos;
 
-		if (pos.z < -10)
+		distMoved += 0.2f;
+		
+		if (distMoved>20)
 			Destroy (gameObject);
 	}
 }
