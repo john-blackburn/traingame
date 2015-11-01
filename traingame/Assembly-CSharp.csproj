@@ -48,6 +48,7 @@
      <Compile Include="Assets\3d_Models\GameController.cs" />
      <Compile Include="Assets\3d_Models\TrainManager.cs" />
      <Compile Include="Assets\DoorController.cs" />
+     <Compile Include="Assets\MonsterController.cs" />
      <Compile Include="Assets\cameraController.cs" />
      <Compile Include="Assets\pillarController.cs" />
  <Reference Include="UnityEngine.UI">
