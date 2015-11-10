@@ -3,3 +3,5 @@ Library
 Temp
 traingame/Library
 traingame/Temp
+*.csproj
+*.sln
