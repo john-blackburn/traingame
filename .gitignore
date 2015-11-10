@@ -5,3 +5,6 @@ traingame/Library
 traingame/Temp
 *.csproj
 *.sln
+*.userprefs
+*.unityproj
+*.pidb
