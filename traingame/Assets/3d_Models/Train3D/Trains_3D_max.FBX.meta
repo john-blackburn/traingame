@@ -6,10 +6,45 @@ ModelImporter:
   serializedVersion: 18
   fileIDToRecycleName:
     100000: //RootNode
+    100002: Box001
+    100004: Box003
+    100006: Box012
+    100008: Box017
+    100010: Box018
+    100012: Box019
+    100014: Object001
     400000: //RootNode
+    400002: Box001
+    400004: Box003
+    400006: Box012
+    400008: Box017
+    400010: Box018
+    400012: Box019
+    400014: Object001
     2300000: //RootNode
+    2300002: Box001
+    2300004: Box003
+    2300006: Box012
+    2300008: Box017
+    2300010: Box018
+    2300012: Box019
+    2300014: Object001
     3300000: //RootNode
+    3300002: Box001
+    3300004: Box003
+    3300006: Box012
+    3300008: Box017
+    3300010: Box018
+    3300012: Box019
+    3300014: Object001
     4300000: Box001
+    4300002: Object003
+    4300004: Box019
+    4300006: Box003
+    4300008: Box012
+    4300010: Box017
+    4300012: Box018
+    4300014: Object001
     9500000: //RootNode
   materials:
     importMaterials: 1
@@ -53,7 +88,7 @@ ModelImporter:
     normalSmoothAngle: 60
     splitTangentsAcrossUV: 1
     normalImportMode: 0
-    tangentImportMode: 1
+    tangentImportMode: 0
   importAnimation: 1
   copyAvatar: 0
   humanDescription:
