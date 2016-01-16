@@ -82,54 +82,60 @@ public class TunnelGameController : MonoBehaviour {
 
 		mainCamera.transform.parent = train.transform;
 
-		float xtun0 = tunnel.transform.position.x;   // starting position of tunnel back-end
-
-		int i,nacc,n,nmore;
-		float x,a,x0,x1,u;
-
-		a = 0.01f;       // acceleration
+		int i, nacc, n, nmore;
+		float x, astart, astop, x0, x1, u, xst;
+		
+		astart = 0.01f;       // acceleration
 		u = 1f;          // top speed  (m/frame)
 		n = 143;         // no of const speed frames
 		nmore = 6;       // additional tunnel sections for slow down
+		xst = 0;
 
-		nacc = (int)(u/a);   // no time steps to get to max speed
+		while (true) {
+			float xtun0 = tunnel.transform.position.x;   // starting position of tunnel back-end
 
-		print ("accelerate");
-		for (i=0; i<nacc; i++) {
-			x = 0.5f * a * i * i;
-			train.transform.position = new Vector3 (x, 0, 0);
-			cycleTunnel(x);
-			yield return null;
-		}
+			nacc = (int)(u / astart);   // no time steps to get to max speed
 
-		x0 = 0.5f * a * nacc * nacc;   // distance covered in acc'n phase
-		print ("const speed");
-		for (i=0; i<n; i++) {
-			x = x0 + i * u;
-			train.transform.position = new Vector3 (x, 0, 0);
-			cycleTunnel(x);
-			yield return null;
-		}
+			print ("accelerate");
+			for (i=0; i<nacc; i++) {
+				x = xst + 0.5f * astart * i * i;
+				train.transform.position = new Vector3 (x, 0, 0);
+				cycleTunnel (x);
+				yield return null;
+			}
 
-		int sectionsDone;
-		float totLength,distRemain;
+			x0 = xst + 0.5f * astart * nacc * nacc;   // distance covered in acc'n phase
+			print ("const speed");
+			for (i=0; i<n; i++) {
+				x = x0 + i * u;
+				train.transform.position = new Vector3 (x, 0, 0);
+				cycleTunnel (x);
+				yield return null;
+			}
 
-		x1 = x0 + n * u;
-		sectionsDone = (int)((x1 - xtun0) / tunnelLength);
-		totLength = (sectionsDone + nmore) * tunnelLength;
-		distRemain = totLength - (x1 - xtun0) + stationLength / 2;
-		a = -u * u / (2 * distRemain);
+			int sectionsDone;
+			float totLength, distRemain;
 
-		print ("sectionsDone"+sectionsDone);
+			x1 = x0 + n * u;
+			sectionsDone = (int)((x1 - xtun0) / tunnelLength);
+			totLength = (sectionsDone + nmore) * tunnelLength;
+			distRemain = totLength - (x1 - xtun0) + stationLength / 2;
+			astop = -u * u / (2 * distRemain);
 
-		station.transform.Translate (new Vector3 (stationLength + totLength, 0, 0));
+			print ("sectionsDone" + sectionsDone);
 
-		print ("slow down" + a);
-		for (i=0; i<=(int)(-u/a); i++) {
-			x = x1 + u * i + 0.5f * a * i * i;
-			train.transform.position = new Vector3 (x, 0, 0);
-			cycleTunnel (x);
-			yield return null;
+			station.transform.Translate (new Vector3 (stationLength + totLength, 0, 0));
+
+			print ("slow down" + astop);
+			for (i=0; i<=(int)(-u/astop); i++) {
+				x = x1 + u * i + 0.5f * astop * i * i;
+				train.transform.position = new Vector3 (x, 0, 0);
+				cycleTunnel (x);
+				yield return null;
+			}
+
+			tunnel.transform.Translate (new Vector3 (3 * tunnelLength + stationLength, 0, 0));
+			xst=station.transform.position.x;
 		}
 
 //		yield return StartCoroutine (moveTrainTo (stationLength + 3 * tunnelLength, 0, 0, 200, 0, 0.5f));
@@ -138,6 +144,8 @@ public class TunnelGameController : MonoBehaviour {
 
 //		tunnel.transform.position = new Vector3 (1.5f * stationLength + 3 * tunnelLength, 0, 0);
 	}
+
+	// ###########################################################
 
 	void cycleTunnel(float x)   // x: train front position
 	{
