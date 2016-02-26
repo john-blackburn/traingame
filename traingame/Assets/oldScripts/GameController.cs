@@ -15,7 +15,7 @@ public class GameController : MonoBehaviour
 	public GameObject mainMenu;
 	public GameObject rgbMenu;
 	public GameObject optionsMenu;
-	public UILabel countDown;
+	public Text countDown;
 	private GameObject mycamera;
 	private GameObject train, door;
 	private int level;
