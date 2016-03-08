@@ -1,0 +1,123 @@
+fileFormatVersion: 2
+guid: b7c42b1a621b3cf4d9c9048eca8c3587
+timeCreated: 1457411810
+licenseType: Pro
+ModelImporter:
+  serializedVersion: 19
+  fileIDToRecycleName:
+    100000: st_base
+    100002: st_big_arch
+    100004: st_body
+    100006: st_l_wall
+    100008: st_pillar
+    100010: st_rwall
+    100012: st_small_arch
+    100014: st_small_arch2
+    100016: st_tunnel
+    100018: //RootNode
+    100020: st_tunnel_left
+    400000: st_base
+    400002: st_big_arch
+    400004: st_body
+    400006: st_l_wall
+    400008: st_pillar
+    400010: st_rwall
+    400012: st_small_arch
+    400014: st_small_arch2
+    400016: st_tunnel
+    400018: //RootNode
+    400020: st_tunnel_left
+    2300000: st_base
+    2300002: st_big_arch
+    2300004: st_body
+    2300006: st_l_wall
+    2300008: st_pillar
+    2300010: st_rwall
+    2300012: st_small_arch
+    2300014: st_small_arch2
+    2300016: st_tunnel
+    2300018: st_tunnel_left
+    3300000: st_base
+    3300002: st_big_arch
+    3300004: st_body
+    3300006: st_l_wall
+    3300008: st_pillar
+    3300010: st_rwall
+    3300012: st_small_arch
+    3300014: st_small_arch2
+    3300016: st_tunnel
+    3300018: st_tunnel_left
+    4300000: st_small_arch
+    4300002: st_rwall
+    4300004: st_tunnel
+    4300006: st_big_arch
+    4300008: st_body
+    4300010: st_base
+    4300012: st_pillar
+    4300014: st_l_wall
+    4300016: st_small_arch2
+    4300018: st_tunnel_left
+  materials:
+    importMaterials: 1
+    materialName: 0
+    materialSearch: 1
+  animations:
+    legacyGenerateAnimations: 4
+    bakeSimulation: 0
+    resampleRotations: 1
+    optimizeGameObjects: 0
+    motionNodeName: 
+    animationImportErrors: 
+    animationImportWarnings: 
+    animationRetargetingWarnings: 
+    animationDoRetargetingWarnings: 0
+    animationCompression: 1
+    animationRotationError: 0.5
+    animationPositionError: 0.5
+    animationScaleError: 0.5
+    animationWrapMode: 0
+    extraExposedTransformPaths: []
+    clipAnimations: []
+    isReadable: 1
+  meshes:
+    lODScreenPercentages: []
+    globalScale: 1
+    meshCompression: 0
+    addColliders: 0
+    importBlendShapes: 1
+    swapUVChannels: 0
+    generateSecondaryUV: 0
+    useFileUnits: 1
+    optimizeMeshForGPU: 1
+    keepQuads: 0
+    weldVertices: 1
+    secondaryUVAngleDistortion: 8
+    secondaryUVAreaDistortion: 15.000001
+    secondaryUVHardAngle: 88
+    secondaryUVPackMargin: 4
+    useFileScale: 1
+  tangentSpace:
+    normalSmoothAngle: 60
+    normalImportMode: 0
+    tangentImportMode: 3
+  importAnimation: 1
+  copyAvatar: 0
+  humanDescription:
+    human: []
+    skeleton: []
+    armTwist: 0.5
+    foreArmTwist: 0.5
+    upperLegTwist: 0.5
+    legTwist: 0.5
+    armStretch: 0.05
+    legStretch: 0.05
+    feetSpacing: 0
+    rootMotionBoneName: 
+    hasTranslationDoF: 0
+  lastHumanDescriptionAvatarSource: {instanceID: 0}
+  animationType: 0
+  humanoidOversampling: 1
+  additionalBone: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
