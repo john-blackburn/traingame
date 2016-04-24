@@ -13,10 +13,13 @@ public class TunnelGameController : MonoBehaviour
 	public GameObject inputMenu, messageBox;
 	public Text countDown, mbText;
 	public Vector3 camStartPos, camStartLookAt, camTrainDisp;
-	public float trainInitX, trainStationDispX;
+	public float trainInitX;
 	public float lookCharsOffsetZ, lookCharsRotateTo;
-	public float astart, umax, umin;   // 0.005, 1
-	public int nmore, nLowSpeed;              // 6
+	public float astart, umax;   // eg 0.005, 1
+	public int nmore;            // eg 6
+
+	private float[][] trainStationDispX,umin;    // eg 20,0.03
+	private int[][] nLowSpeed;                   // eg 100
 
 	private GameObject mainCamera, train, tunnel, station;
 	private BoxCollider tunnelCollider, stationCollider;
@@ -104,10 +107,22 @@ public class TunnelGameController : MonoBehaviour
 
 		// R = right side sequence, L=left side, E=empty, P=preview
 		track = new string[4];
-		track [0] = ".R3 IR3 IL3 IE. ";  // 4 stations (excluding beginning)
+		track [0] = ".R3 IR3 IL3 IE. ";  // 4 stations (excluding first station)
 		track [1] = ".R3 IR3 IP1 .L3 IE. ";
 		track [2] = "R3I P2. L4I R4. R3I ";
 		track [3] = "R3. E.I R3. R3I R4I ";
+
+		trainStationDispX=new float[4][];
+		umin=new float[4][];
+		nLowSpeed=new int[4][];
+
+		// track 0 details
+
+		trainStationDispX[0]=new float[5]{20,20,10,10,20};   // first is start station
+		umin[0]=new float[5]{0, 0, 0.03f, 0.03f, 0};               // first and last not used
+		nLowSpeed[0]=new int[5]{0,100,100,100,100};          // first and last not used
+
+		// track 1 details
 
 		yield return StartCoroutine (trainArrives ());
 
@@ -123,10 +138,8 @@ public class TunnelGameController : MonoBehaviour
 		int i, nacc;
 		float x, astop, xst;
 
-		xst = trainStationDispX;         // starting position of front of train
-		float camDistFromFront = trainStationDispX - (camStartPos.x + camTrainDisp.x);
-
-		bool first = true;
+		xst = trainStationDispX[0][0];         // starting position of front of train
+		float camDistFromFront = trainStationDispX[0][0] - (camStartPos.x + camTrainDisp.x);
 		float ust = 0;
 
 		// Process the track
@@ -236,8 +249,8 @@ public class TunnelGameController : MonoBehaviour
 			
 			sectionsDone = (int)((xst - xtun0) / tunnelLength);
 			totLength = (sectionsDone + nmore) * tunnelLength;
-			distRemain = totLength - (xst - xtun0) + stationLength / 2 + trainStationDispX;
-			astop = (umin * umin - umax * umax) / (2 * distRemain);    // v^2=u^2+2as (will be negative)
+			distRemain = totLength - (xst - xtun0) + stationLength / 2 + trainStationDispX[0][istation];
+			astop = (umin[0][istation] * umin[0][istation] - umax * umax) / (2 * distRemain);    // v^2=u^2+2as (will be negative)
 
 			//--------------------------------------------------------------------
 			// Move Station. Set numbers on outside characters' signs (if needed)
@@ -305,14 +318,14 @@ public class TunnelGameController : MonoBehaviour
 			
 			print ("sectionsDone" + sectionsDone);
 			print ("slow down" + astop);
-			for (i=0; i<=(int)((umin-umax)/astop); i++) {
+			for (i=0; i<=(int)((umin[0][istation]-umax)/astop); i++) {
 				x = xst + umax * i + 0.5f * astop * i * i;
 				train.transform.position = new Vector3 (x, 0, 0);
 				cycleTunnel (x - camDistFromFront);
 				yield return null;
 			}
-			xst = station.transform.position.x + trainStationDispX;
-			ust = umin;
+			xst = station.transform.position.x + trainStationDispX[0][istation];
+			ust = umin[0][istation];
 
 			//--------------------------------------------------
 			// Move slowly through the station 
@@ -320,8 +333,8 @@ public class TunnelGameController : MonoBehaviour
 			//--------------------------------------------------
 
 			if (istation != nstation) {
-				for (i=0; i<nLowSpeed/2; i++) {
-					x = xst + umin * i;
+				for (i=0; i<nLowSpeed[0][istation]/2; i++) {
+					x = xst + umin[0][istation] * i;
 					train.transform.position = new Vector3 (x, 0, 0);
 					cycleTunnel (x - camDistFromFront);
 					yield return null;
@@ -345,13 +358,13 @@ public class TunnelGameController : MonoBehaviour
 					yield return StartCoroutine (moveCameraTo (0, 0, -lookCharsOffsetZ, 40, true));
 				}
 
-				for (i=nLowSpeed/2; i<nLowSpeed; i++) {
-					x = xst + umin * i;
+				for (i=nLowSpeed[0][istation]/2; i<nLowSpeed[0][istation]; i++) {
+					x = xst + umin[0][istation] * i;
 					train.transform.position = new Vector3 (x, 0, 0);
 					cycleTunnel (x - camDistFromFront);
 					yield return null;
 				}
-				xst = xst + umin * nLowSpeed;
+				xst = xst + umin[0][istation] * nLowSpeed[0][istation];
 			}
 
 			tunnel.transform.Translate (new Vector3 (3 * tunnelLength + stationLength, 0, 0));
@@ -458,7 +471,7 @@ public class TunnelGameController : MonoBehaviour
 		float s;
 
 		for (s=0; s<1; s+=0.01f) {
-			Vector3 pos = new Vector3 (trainInitX - (trainInitX - trainStationDispX) * inOutExponential (s), 0, 0);
+			Vector3 pos = new Vector3 (trainInitX - (trainInitX - trainStationDispX[0][0]) * inOutExponential (s), 0, 0);
 			train.transform.position = pos;
 			yield return null;
 		}
