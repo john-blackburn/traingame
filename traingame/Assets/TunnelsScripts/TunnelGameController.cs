@@ -29,9 +29,10 @@ public class TunnelGameController : MonoBehaviour
 	private GameObject outCharGroup;
 	private GameObject[] outChars;
 	private bool pressedOK;
-	private string[] track;
+	private string[][] track;
 	private TunnelCameraController mainCameraScript;
 	private bool finishedMoving=false;
+	private int itrack;
 
 	// Use this for initialization
 	void Start ()
@@ -106,23 +107,27 @@ public class TunnelGameController : MonoBehaviour
 		string temp;
 
 		// R = right side sequence, L=left side, E=empty, P=preview
-		track = new string[4];
-		track [0] = ".R3 IR3 IL3 IE. ";  // 4 stations (excluding first station)
-		track [1] = ".R3 IR3 IP1 .L3 IE. ";
-		track [2] = "R3I P2. L4I R4. R3I ";
-		track [3] = "R3. E.I R3. R3I R4I ";
+//		track = new string[4];
+//		track [0] = ".R3 IR3 IL3 IE. ";  // 4 stations (excluding first station)
+//		track [1] = ".R3 IR3 IP1 .L3 IE. ";
+//		track [2] = "R3I P2. L4I R4. R3I ";
+//		track [3] = "R3. E.I R3. R3I R4I ";
 
+		track=new string[4][];
 		trainStationDispX=new float[4][];
 		umin=new float[4][];
 		nLowSpeed=new int[4][];
 
 		// track 0 details
 
-		trainStationDispX[0]=new float[5]{20,20,10,10,20};   // first is start station
-		umin[0]=new float[5]{0, 0, 0.03f, 0.03f, 0};               // first and last not used
-		nLowSpeed[0]=new int[5]{0,100,100,100,100};          // first and last not used
+		track[0]            =new string[5]{"",".R3","IR3","IL3","IE."};
+		trainStationDispX[0]=new float [5]{20,20,10,10,20};   // first is start station
+		umin[0]             =new float [5]{0, 0, 0.1f, 0.1f, 0};      // first and last not used
+		nLowSpeed[0]        =new int   [5]{0,100,300,300,0};          // first and last not used
 
 		// track 1 details
+
+		itrack=0;
 
 		yield return StartCoroutine (trainArrives ());
 
@@ -138,18 +143,17 @@ public class TunnelGameController : MonoBehaviour
 		int i, nacc;
 		float x, astop, xst;
 
-		xst = trainStationDispX[0][0];         // starting position of front of train
-		float camDistFromFront = trainStationDispX[0][0] - (camStartPos.x + camTrainDisp.x);
+		xst = trainStationDispX[itrack][0];         // starting position of front of train
+		float camDistFromFront = trainStationDispX[itrack][0] - (camStartPos.x + camTrainDisp.x);
 		float ust = 0;
 
 		// Process the track
-		//            0    1   2   3   4
-		//                ".R3 IL3 IR3 IE. ";
-		int nstation = track [0].Length / 4;   // 4 stations (incl end one)
-		int strpos;
-		for (int istation=1; istation <= nstation; istation++) {
-			strpos = (istation - 1) * 4;
-			print ("station text" + track [0].Substring (strpos, 3));
+		//            0   1   2   3   4
+		//            000 .R3 IL3 IR3 IE.;
+		int nstation = track [itrack].Length;   // 5 stations (incl beginning and end)
+
+		for (int istation=1; istation < nstation; istation++) {
+			print ("station text" + track [itrack][istation]);
 
 			float xtun0 = tunnel.transform.position.x;   // starting position of tunnel back-end
 			nacc = (int)((umax - ust) / astart);   // no time steps to get to max speed
@@ -189,7 +193,7 @@ public class TunnelGameController : MonoBehaviour
 			// continue moving while user enters code (if needed)
 			//--------------------------------------------------------------------
 
-			if (track [0] [strpos] == 'I') {
+			if (track [itrack][istation][0] == 'I') {
 
 				print ("wait for input");
 				inputMenu.SetActive (true);
@@ -249,8 +253,9 @@ public class TunnelGameController : MonoBehaviour
 			
 			sectionsDone = (int)((xst - xtun0) / tunnelLength);
 			totLength = (sectionsDone + nmore) * tunnelLength;
-			distRemain = totLength - (xst - xtun0) + stationLength / 2 + trainStationDispX[0][istation];
-			astop = (umin[0][istation] * umin[0][istation] - umax * umax) / (2 * distRemain);    // v^2=u^2+2as (will be negative)
+			distRemain = totLength - (xst - xtun0) + stationLength / 2 + trainStationDispX[itrack][istation];
+			astop = (umin[itrack][istation] * umin[itrack][istation] - umax * umax) / (2 * distRemain);    
+			// v^2=u^2+2as (will be negative)
 
 			//--------------------------------------------------------------------
 			// Move Station. Set numbers on outside characters' signs (if needed)
@@ -258,13 +263,13 @@ public class TunnelGameController : MonoBehaviour
 
 			station.transform.Translate (new Vector3 (stationLength + totLength, 0, 0));
 
-			//                ".R3 IL3 IR3 IE. ";
-			if (track [0] [strpos + 1] == 'E') {
+			//                "000 .R3 IL3 IR3 IE. ";
+			if (track [itrack][istation][1] == 'E') {
 				outCharGroup.SetActive (false);
-			} else if (track [0] [strpos + 1] == 'R' || track [0] [strpos + 1] == 'L') {
+			} else if (track [itrack][istation][1] == 'R' || track [itrack][istation][1] == 'L') {
 
 				float z, rotY;
-				if (track [0] [strpos + 1] == 'R') {
+				if (track [itrack][istation][1] == 'R') {
 					z = -8;
 					rotY = 0;
 				} else {
@@ -303,13 +308,12 @@ public class TunnelGameController : MonoBehaviour
 					Text number = outChars [i].GetComponentInChildren<Text> ();
 					number.text = sequence [i].ToString ();
 				}
-			} else if (track [0] [strpos + 1] == 'P') {
+			} else if (track [itrack][istation][1] == 'P') {
 				outCharGroup.SetActive (true);
 				for (i=0; i<3; i++) {
 					Text number = outChars [i].GetComponentInChildren<Text> ();
 					number.text = "RIGHT";
 				}
-
 			}
 
 			//--------------------------------------------------------------------
@@ -318,14 +322,14 @@ public class TunnelGameController : MonoBehaviour
 			
 			print ("sectionsDone" + sectionsDone);
 			print ("slow down" + astop);
-			for (i=0; i<=(int)((umin[0][istation]-umax)/astop); i++) {
+			for (i=0; i<=(int)((umin[itrack][istation]-umax)/astop); i++) {
 				x = xst + umax * i + 0.5f * astop * i * i;
 				train.transform.position = new Vector3 (x, 0, 0);
 				cycleTunnel (x - camDistFromFront);
 				yield return null;
 			}
-			xst = station.transform.position.x + trainStationDispX[0][istation];
-			ust = umin[0][istation];
+			xst = station.transform.position.x + trainStationDispX[itrack][istation];
+			ust = umin[itrack][istation];
 
 			//--------------------------------------------------
 			// Move slowly through the station 
@@ -333,8 +337,8 @@ public class TunnelGameController : MonoBehaviour
 			//--------------------------------------------------
 
 			if (istation != nstation) {
-				for (i=0; i<nLowSpeed[0][istation]/2; i++) {
-					x = xst + umin[0][istation] * i;
+				for (i=0; i<nLowSpeed[itrack][istation]/2; i++) {
+					x = xst + umin[itrack][istation] * i;
 					train.transform.position = new Vector3 (x, 0, 0);
 					cycleTunnel (x - camDistFromFront);
 					yield return null;
@@ -344,8 +348,8 @@ public class TunnelGameController : MonoBehaviour
 					yield return StartCoroutine (moveCameraTo (0, 0, lookCharsOffsetZ, 60, true));
 					yield return StartCoroutine (rotateCameraTo (0, lookCharsRotateTo, 0, 60));
 				
-					mbText.text = "Who were those strange figures? " +
-						"They didn't look human...";
+					mbText.text = "What were those strange figures? " +
+								  "They didn't look human...";
 				
 					messageBox.SetActive (true);
 					pressedOK = false;
@@ -358,13 +362,13 @@ public class TunnelGameController : MonoBehaviour
 					yield return StartCoroutine (moveCameraTo (0, 0, -lookCharsOffsetZ, 40, true));
 				}
 
-				for (i=nLowSpeed[0][istation]/2; i<nLowSpeed[0][istation]; i++) {
-					x = xst + umin[0][istation] * i;
+				for (i=nLowSpeed[itrack][istation]/2; i<nLowSpeed[itrack][istation]; i++) {
+					x = xst + umin[itrack][istation] * i;
 					train.transform.position = new Vector3 (x, 0, 0);
 					cycleTunnel (x - camDistFromFront);
 					yield return null;
 				}
-				xst = xst + umin[0][istation] * nLowSpeed[0][istation];
+				xst = xst + umin[itrack][istation] * nLowSpeed[itrack][istation];
 			}
 
 			tunnel.transform.Translate (new Vector3 (3 * tunnelLength + stationLength, 0, 0));
@@ -471,7 +475,7 @@ public class TunnelGameController : MonoBehaviour
 		float s;
 
 		for (s=0; s<1; s+=0.01f) {
-			Vector3 pos = new Vector3 (trainInitX - (trainInitX - trainStationDispX[0][0]) * inOutExponential (s), 0, 0);
+			Vector3 pos = new Vector3 (trainInitX - (trainInitX - trainStationDispX[itrack][0]) * inOutExponential (s), 0, 0);
 			train.transform.position = pos;
 			yield return null;
 		}
