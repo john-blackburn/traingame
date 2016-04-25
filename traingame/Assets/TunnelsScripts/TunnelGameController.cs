@@ -38,6 +38,23 @@ public class TunnelGameController : MonoBehaviour
 	void Start ()
 	{
 
+		//		track [0] = ".R3 IR3 IL3 IE. ";  // 4 stations (excluding first station)
+		//		track [1] = ".R3 IR3 IP1 .L3 IE. ";
+		
+		track=new string[4][];
+		trainStationDispX=new float[4][];
+		umin=new float[4][];
+		nLowSpeed=new int[4][];
+		
+		// track 0 details
+		// R = right side sequence, L=left side, E=empty, P=preview
+
+		track[0]            =new string[5]{"",".R3","IR3","IL3","IE."};
+		trainStationDispX[0]=new float [5]{20,20,10,10,20};   // first is start station
+		umin[0]             =new float [5]{0, 0, 0.1f, 0.1f, 0};      // first and last not used
+		nLowSpeed[0]        =new int   [5]{0,100,300,300,0};          // first and last not used
+
+
 		inputMenu.SetActive (false);
 		messageBox.SetActive (false);
 
@@ -72,9 +89,6 @@ public class TunnelGameController : MonoBehaviour
 			trainCabin.transform.parent = train.transform;
 		}
 
-		mainCamera.transform.position = camStartPos;   // -4,0,10
-		mainCamera.transform.LookAt (camStartLookAt);  // 10,0,0
-
 		print (train.transform.childCount);
 
 		tunnel = new GameObject ();
@@ -106,31 +120,13 @@ public class TunnelGameController : MonoBehaviour
 	{
 		string temp;
 
-		// R = right side sequence, L=left side, E=empty, P=preview
-//		track = new string[4];
-//		track [0] = ".R3 IR3 IL3 IE. ";  // 4 stations (excluding first station)
-//		track [1] = ".R3 IR3 IP1 .L3 IE. ";
-//		track [2] = "R3I P2. L4I R4. R3I ";
-//		track [3] = "R3. E.I R3. R3I R4I ";
-
-		track=new string[4][];
-		trainStationDispX=new float[4][];
-		umin=new float[4][];
-		nLowSpeed=new int[4][];
-
-		// track 0 details
-
-		track[0]            =new string[5]{"",".R3","IR3","IL3","IE."};
-		trainStationDispX[0]=new float [5]{20,20,10,10,20};   // first is start station
-		umin[0]             =new float [5]{0, 0, 0.1f, 0.1f, 0};      // first and last not used
-		nLowSpeed[0]        =new int   [5]{0,100,300,300,0};          // first and last not used
-
-		// track 1 details
-
 		itrack=0;
 
-		yield return StartCoroutine (trainArrives ());
+		mainCamera.transform.position = camStartPos;   // -4,0,10
+		mainCamera.transform.LookAt (camStartLookAt);  // 10,0,0
 
+		yield return StartCoroutine (trainArrives ());
+				
 		yield return StartCoroutine (mainCameraScript.rotateTo (0, 180, 0, 60));
 		yield return StartCoroutine (moveCameraTo (camStartPos.x, 0, 0, 60));
 		yield return StartCoroutine (rotateCameraTo (0, -90, 0, 60));
