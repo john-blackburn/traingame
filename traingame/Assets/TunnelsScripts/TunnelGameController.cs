@@ -38,6 +38,9 @@ public class TunnelGameController : MonoBehaviour
 	void Start ()
 	{
 
+		sequence=new string[100];
+		typed_sequence=new string[100];
+
 		//		track [0] = ".R3 IR3 IL3 IE. ";  // 4 stations (excluding first station)
 		//		track [1] = ".R3 IR3 IP1 .L3 IE. ";
 		
@@ -49,11 +52,10 @@ public class TunnelGameController : MonoBehaviour
 		// track 0 details
 		// R = right side sequence, L=left side, E=empty, P=preview
 
-		track[0]            =new string[5]{"",".R3","IR3","IL3","IE."};
+		track[0]            =new string[5]{"",".R3",".R3","IL3","IE."};
 		trainStationDispX[0]=new float [5]{20,20,10,10,20};   // first is start station
 		umin[0]             =new float [5]{0, 0, 0.1f, 0.1f, 0};      // first and last not used
 		nLowSpeed[0]        =new int   [5]{0,100,300,300,0};          // first and last not used
-
 
 		inputMenu.SetActive (false);
 		messageBox.SetActive (false);
@@ -121,6 +123,7 @@ public class TunnelGameController : MonoBehaviour
 		string temp;
 
 		itrack=0;
+		int nsequence=0;
 
 		mainCamera.transform.position = camStartPos;   // -4,0,10
 		mainCamera.transform.LookAt (camStartLookAt);  // 10,0,0
@@ -128,11 +131,11 @@ public class TunnelGameController : MonoBehaviour
 		yield return StartCoroutine (trainArrives ());
 				
 		yield return StartCoroutine (mainCameraScript.rotateTo (0, 180, 0, 60));
-		yield return StartCoroutine (moveCameraTo (camStartPos.x, 0, 0, 60));
-		yield return StartCoroutine (rotateCameraTo (0, -90, 0, 60));
-		yield return StartCoroutine (moveCameraTo (camStartPos.x + camTrainDisp.x, 0, 0, 60));
-		yield return StartCoroutine (rotateCameraTo (0, 180, 0, 60));
-		yield return StartCoroutine (moveCameraTo (camStartPos.x + camTrainDisp.x, 0, camTrainDisp.z, 60));
+		yield return StartCoroutine (mainCameraScript.moveTo (camStartPos.x, 0, 0, 60));
+		yield return StartCoroutine (mainCameraScript.rotateTo (0, -90, 0, 30));
+		yield return StartCoroutine (mainCameraScript.moveTo (camStartPos.x + camTrainDisp.x, 0, 0, 60));
+		yield return StartCoroutine (mainCameraScript.rotateTo (0, 180, 0, 30));
+		yield return StartCoroutine (mainCameraScript.moveTo (camStartPos.x + camTrainDisp.x, 0, camTrainDisp.z, 60));
 
 		mainCamera.transform.parent = train.transform;
 
@@ -194,10 +197,9 @@ public class TunnelGameController : MonoBehaviour
 				print ("wait for input");
 				inputMenu.SetActive (true);
 
-				typed_sequence = new string[3];
 				nentry = 0;                   // set by buttoms in inputMenu
 				for (i=0; i<500; i++) {
-					if (nentry >= 3)
+					if (nentry >= nsequence)
 						break;
 					x = xst + i * umax;
 					train.transform.position = new Vector3 (x, 0, 0);
@@ -215,13 +217,15 @@ public class TunnelGameController : MonoBehaviour
 				print ("typed sequence=" + temp);
 				
 				bool correct = true;
-				for (i=0; i<3; i++) {
+				for (i=0; i < nentry; i++) {
 					if (sequence [i] != typed_sequence [i]) {
 						correct = false;
 						break;
 					}
 				}
 				print ("got it right? " + correct);
+
+				nsequence=0;
 
 				if (correct) {
 					finishedMoving=false;
@@ -236,6 +240,7 @@ public class TunnelGameController : MonoBehaviour
 						yield return null;
 					}
 					xst = xst + i * umax;
+					camDistFromFront -= tunnelLength/2;
 				}
 
 			}
@@ -273,37 +278,39 @@ public class TunnelGameController : MonoBehaviour
 					rotY = 180;
 				}
 
-				for (i=0; i<3; i++) {
+				int nOutChars=track[itrack][istation][2]-'0';
+
+				for (i=0; i<nOutChars; i++) {
 					outChars [i].transform.localPosition = new Vector3 (-4 + i * 4, 1, z);
 					outChars [i].transform.rotation = Quaternion.Euler (0, rotY, 0);
 				}
 
 				outCharGroup.SetActive (true);
 				outCharGroup.transform.position = new Vector3 (station.transform.position.x,
-				                                              station.transform.position.y, 0);
-
-				sequence = new string[3];
-			
-				for (i=0; i<sequence.Length; i++) {
+  				                                               station.transform.position.y, 0);
+							
+				for (i=0; i<nOutChars; i++) {
 				
 					float r = Random.value;
 					if (r < 0.333)
-						sequence [i] = "1";
+						temp = "1";
 					else if (r < 0.666)
-						sequence [i] = "2";
+						temp = "2";
 					else
-						sequence [i] = "3";
+						temp = "3";
+
+					sequence [nsequence] = temp;
+					nsequence++;
+
+					Text number = outChars [i].GetComponentInChildren<Text> ();
+					number.text = temp;
 				}
 			
 				temp = "";
-				for (i=0; i<sequence.Length; i++)
+				for (i=0; i<nsequence; i++)
 					temp += sequence [i];
 				print ("sequence=" + temp);
 
-				for (i=0; i<3; i++) {
-					Text number = outChars [i].GetComponentInChildren<Text> ();
-					number.text = sequence [i].ToString ();
-				}
 			} else if (track [itrack][istation][1] == 'P') {
 				outCharGroup.SetActive (true);
 				for (i=0; i<3; i++) {
