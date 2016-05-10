@@ -26,8 +26,9 @@ public class TunnelGameController : MonoBehaviour
 	private float tunnelLength, tunnelWidth, stationLength, stationWidth;
 	private int nentry = 0;
 	private string[] sequence, typed_sequence;
-	private GameObject outCharGroup;
+	private GameObject outCharGroup, previewCharGroup;
 	private GameObject[] outChars;
+	private GameObject[,] previewChars;
 	private bool pressedOK;
 	private string[][] track;
 	private TunnelCameraController mainCameraScript;
@@ -41,9 +42,6 @@ public class TunnelGameController : MonoBehaviour
 		sequence=new string[100];
 		typed_sequence=new string[100];
 
-		//		track [0] = ".R3 IR3 IL3 IE. ";  // 4 stations (excluding first station)
-		//		track [1] = ".R3 IR3 IP1 .L3 IE. ";
-		
 		track=new string[4][];
 		trainStationDispX=new float[4][];
 		umin=new float[4][];
@@ -52,7 +50,7 @@ public class TunnelGameController : MonoBehaviour
 		// track 0 details
 		// R = right side sequence, L=left side, E=empty, P=preview
 
-		track[0]            =new string[5]{"",".R3",".R3","IL3","IE."};
+		track[0]            =new string[5]{"",".P1",".R2","IL3","IE"};
 		trainStationDispX[0]=new float [5]{20,20,10,10,20};   // first is start station
 		umin[0]             =new float [5]{0, 0, 0.1f, 0.1f, 0};      // first and last not used
 		nLowSpeed[0]        =new int   [5]{0,100,300,300,0};          // first and last not used
@@ -113,6 +111,23 @@ public class TunnelGameController : MonoBehaviour
 		}
 		outCharGroup.SetActive (false);
 
+		previewChars = new GameObject[2,3];     // [0=left, 1=right; 1,2,3...]
+
+		previewCharGroup = new GameObject ();
+		for (int j = 0; j < 2; j++) {
+			for (int i = 0; i < 3; i++) {
+				GameObject previewChar = Instantiate (OutCharPrefab) as GameObject;
+				previewChars [j, i] = previewChar;
+				previewChar.transform.parent = previewCharGroup.transform;
+
+				previewChar.transform.localPosition = new Vector3 (-4 + i * 4, 1, -8 + j * 16);
+
+				if (j == 1)
+					previewChar.transform.rotation = Quaternion.Euler (0, 180, 0);
+			}
+		}
+		previewCharGroup.SetActive (false);
+
 		StartCoroutine (playGame ());
 	}
 
@@ -139,7 +154,7 @@ public class TunnelGameController : MonoBehaviour
 
 		mainCamera.transform.parent = train.transform;
 
-		int i, nacc;
+		int i, j, nacc;
 		float x, astop, xst;
 
 		xst = trainStationDispX[itrack][0];         // starting position of front of train
@@ -172,6 +187,7 @@ public class TunnelGameController : MonoBehaviour
 			ust = umax;
 
 			outCharGroup.SetActive (false);
+			previewCharGroup.SetActive (false);
 
 			//--------------------------------------------------------------------
 			// Constant speed phase for n frames
@@ -215,17 +231,23 @@ public class TunnelGameController : MonoBehaviour
 				for (i=0; i < nentry; i++)
 					temp += typed_sequence [i];
 				print ("typed sequence=" + temp);
-				
-				bool correct = true;
-				for (i=0; i < nentry; i++) {
-					if (sequence [i] != typed_sequence [i]) {
-						correct = false;
-						break;
+
+				bool correct;
+
+				if (nentry != nsequence)
+					correct = false;
+				else {
+					correct = true;
+					for (i = 0; i < nsequence; i++) {
+						if (sequence [i] != typed_sequence [i]) {
+							correct = false;
+							break;
+						}
 					}
 				}
 				print ("got it right? " + correct);
 
-				nsequence=0;
+				nsequence=0;    // reset sequence
 
 				if (correct) {
 					finishedMoving=false;
@@ -267,6 +289,7 @@ public class TunnelGameController : MonoBehaviour
 			//                "000 .R3 IL3 IR3 IE. ";
 			if (track [itrack][istation][1] == 'E') {
 				outCharGroup.SetActive (false);
+				previewCharGroup.SetActive (false);
 			} else if (track [itrack][istation][1] == 'R' || track [itrack][istation][1] == 'L') {
 
 				float z, rotY;
@@ -280,7 +303,12 @@ public class TunnelGameController : MonoBehaviour
 
 				int nOutChars=track[itrack][istation][2]-'0';
 
+				for (i = 0; i < 3; i++) {
+					outChars [i].SetActive (false);
+				}
+
 				for (i=0; i<nOutChars; i++) {
+					outChars [i].SetActive (true);
 					outChars [i].transform.localPosition = new Vector3 (-4 + i * 4, 1, z);
 					outChars [i].transform.rotation = Quaternion.Euler (0, rotY, 0);
 				}
@@ -312,11 +340,38 @@ public class TunnelGameController : MonoBehaviour
 				print ("sequence=" + temp);
 
 			} else if (track [itrack][istation][1] == 'P') {
-				outCharGroup.SetActive (true);
-				for (i=0; i<3; i++) {
-					Text number = outChars [i].GetComponentInChildren<Text> ();
-					number.text = "RIGHT";
+
+			// ----------------------------------------------------
+			// set preview characters
+			// ----------------------------------------------------
+
+				int nPreviewChars = track [itrack] [istation] [2] - '0';
+
+				for (i = 0; i < 3; i++) {
+					previewChars [0, i].SetActive (false);
+					previewChars [1, i].SetActive (false);
 				}
+
+				for (i=0; i<nPreviewChars; i++) {
+					previewChars [0, i].SetActive (true);
+					previewChars [1, i].SetActive (true);
+
+					string text;
+					if (track [itrack] [istation + i + 1] [1] == 'R')
+						text = "RIGHT";
+					else
+						text = "LEFT";
+
+					Text number = previewChars [0,i].GetComponentInChildren<Text> ();
+					number.text = text;
+
+					number = previewChars [1,i].GetComponentInChildren<Text> ();
+					number.text = text;
+				}
+
+				previewCharGroup.SetActive (true);
+				previewCharGroup.transform.position = 
+					new Vector3 (station.transform.position.x,station.transform.position.y, 0);
 			}
 
 			//--------------------------------------------------------------------
