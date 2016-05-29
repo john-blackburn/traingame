@@ -4,10 +4,13 @@ using System.Collections;
 public class TunnelCameraController : MonoBehaviour {
 
 	private bool moving;
+	private bool isFireball;
+	public int rotateFrames, moveFrames;
 
 	// Use this for initialization
 	void Start () {
 		moving=false;
+		isFireball = false;
 	}
 	
 	// Update is called once per frame
@@ -15,18 +18,28 @@ public class TunnelCameraController : MonoBehaviour {
 	
 	}
 
+	public void setFireball(bool fireball)
+	{
+		isFireball = fireball;
+	}
+
+	public bool getFireball()
+	{
+		return isFireball;
+	}
+		
 	IEnumerator switchSide()
 	{
 		moving=true;
 		Vector3 pos=transform.localPosition;
 
 		if (pos.z>0){
-			yield return StartCoroutine(rotateTo(0,180,0,60));
-			yield return StartCoroutine(moveTo(pos.x,pos.y,-pos.z,100));
+			if (!isFireball) yield return StartCoroutine(rotateTo(0,180,0,rotateFrames));
+			yield return StartCoroutine(moveTo(pos.x,pos.y,-pos.z,moveFrames));
 		}
 		else {
-			yield return StartCoroutine(rotateTo(0,0,0,60));
-			yield return StartCoroutine(moveTo(pos.x,pos.y,-pos.z,100));
+			if (!isFireball) yield return StartCoroutine(rotateTo(0,0,0,rotateFrames));
+			yield return StartCoroutine(moveTo(pos.x,pos.y,-pos.z,moveFrames));
 		}
 
 		moving=false;
