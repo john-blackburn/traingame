@@ -8,15 +8,20 @@ ModelImporter:
     100000: char01
     100002: //RootNode
     100004: sign
+    100006: Object001
     400000: char01
     400002: //RootNode
     400004: sign
+    400006: Object001
     2300000: char01
     2300002: sign
+    2300004: Object001
     3300000: char01
     3300002: sign
+    3300004: Object001
     4300000: char01
     4300002: sign
+    4300004: Object001
     9500000: //RootNode
   materials:
     importMaterials: 1
