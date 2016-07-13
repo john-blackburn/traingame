@@ -642,19 +642,22 @@ public class TunnelGameController : MonoBehaviour
 	
 	public void button1Pressed ()
 	{
+        Debug.Log("btn 1");
 		typed_sequence [nentry] = "1";
 		nentry++;
 	}
 	
 	public void button2Pressed ()
 	{
-		typed_sequence [nentry] = "2";
+        Debug.Log("btn 2");
+        typed_sequence [nentry] = "2";
 		nentry++;
 	}
 	
 	public void button3Pressed ()
 	{
-		typed_sequence [nentry] = "3";
+        Debug.Log("btn 3");
+        typed_sequence [nentry] = "3";
 		nentry++;
 	}
 
