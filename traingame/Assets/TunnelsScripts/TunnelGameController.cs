@@ -10,8 +10,9 @@ public class TunnelGameController : MonoBehaviour
 {
 
 	public GameObject TrainCabinPrefab, TunnelSectionPrefab, StationPrefab, OutCharPrefab, fireballPrefab;
+	public GameObject monsterPrefab;
 	public GameObject inputMenu, messageBox;
-	public Text countDown, mbText;
+	public Text countDown, mbText, textEntry;
 	public Vector3 camStartPos, camTrainDisp;
 	public float trainInitX, camStartRot;
 	public float astart, umax;   // eg 0.005, 1
@@ -21,6 +22,7 @@ public class TunnelGameController : MonoBehaviour
 	private int[][] nLowSpeed;                   // eg 100
 
 	private GameObject mainCamera, train, tunnel, station;
+	private GameObject[] carriages;
 	private BoxCollider tunnelCollider, stationCollider;
 	private float tunnelLength, tunnelWidth, stationLength, stationWidth;
 	private int nentry = 0;
@@ -32,7 +34,7 @@ public class TunnelGameController : MonoBehaviour
 	private string[][] track;
 	private TunnelCameraController mainCameraScript;
 	private bool finishedMoving=false;
-	private int itrack,ntracks,maxOutChars;
+	private int itrack,ntracks,maxOutChars,nCarriages;
 
 	//################################################################
 
@@ -41,8 +43,9 @@ public class TunnelGameController : MonoBehaviour
 	{
 
 		// parameters not exposed in the editor
-		ntracks = 3;
-		maxOutChars = 5;
+		ntracks = 3;      // number of tracks (levels)
+		maxOutChars = 5;  // max number of sequence characters (max preview characters is 3)
+		nCarriages=4;
 
 		sequence=new string[100];
 		typed_sequence=new string[100];
@@ -56,10 +59,10 @@ public class TunnelGameController : MonoBehaviour
 		// R = right side sequence, L=left side, E=empty, P=preview
         //		track[0]            =new string[5]{"","FP1",".R2","IL3","IE"};
 
-		track[0]            =new string[]{"",".R2","IR3","IL3","IE"};
-		trainStationDispX[0]=new float []{20,20,10,10,20};   // first is start station
-		umin[0]             =new float []{0, 0, 0.1f, 0.1f, 0};      // first and last not used
-		nLowSpeed[0]        =new int   []{0,100,300,300,0};          // first and last not used
+		track[0]            =new string[]{"",".R2","IR3","IR2",".R2","IE"};
+		trainStationDispX[0]=new float []{20+13.3f,32,0,0,0,5};   // first is start station
+		umin[0]             =new float []{0, 0, 0.07f, 0.07f, 0.07f, 0};      // first and last not used
+		nLowSpeed[0]        =new int   []{0,100,250,250,250,0};          // first and last not used
 
 		track[1]            =new string[]{"",".R3","IR3","IP1",".L3","IE"};
 		trainStationDispX[1]=new float []{20,20,10,10,20,20};   // first is start station
@@ -93,6 +96,7 @@ public class TunnelGameController : MonoBehaviour
 		stationLength = stationCollider.bounds.size.x;
 		stationWidth = stationCollider.bounds.size.z;
 
+
 		print ("Tunnel length=" + tunnelLength);
 		print ("Tunnel width=" + tunnelWidth);
 
@@ -100,9 +104,13 @@ public class TunnelGameController : MonoBehaviour
 		print ("Station width=" + stationWidth);
 
 		train = new GameObject ();
+		carriages = new GameObject[nCarriages];
 
-		for (int i=0; i<3; i++) {
+		for (int i=0; i<nCarriages; i++) {
 			GameObject trainCabin = Instantiate (TrainCabinPrefab) as GameObject;
+//			Renderer rend = trainCabin.GetComponent<Renderer> ();
+//			rend.material.color = Color.red;
+			carriages [i] = trainCabin;
 			trainCabin.transform.localPosition = new Vector3 (-tunnelLength / 4 - tunnelLength * i / 2, 0, 0);
 			trainCabin.transform.parent = train.transform;
 		}
@@ -153,14 +161,17 @@ public class TunnelGameController : MonoBehaviour
 	
 	IEnumerator playGame ()
 	{
-		string temp;
-		bool tutorial = false;
+		string temp="";
+		Vector3 pos;
+
+		bool tutorial = true;    // if true, show the tutorial text
+		bool cheat = true;       // if true, monster does not kill you, progress to next carriage
+		bool calcDispx = true;   // if true, calculate values in trainStationDispX to give best view of characters
 
 		for (itrack = 0; itrack < ntracks; itrack++) {
 			int nsequence = 0;
 
 			mainCamera.transform.position = camStartPos;   // -4,0,10
-//			mainCamera.transform.LookAt (camStartLookAt);  // 10,0,0
 			mainCamera.transform.rotation = Quaternion.Euler (0, camStartRot, 0);
 
 			yield return StartCoroutine (trainArrives ());
@@ -174,11 +185,15 @@ public class TunnelGameController : MonoBehaviour
 
 			mainCamera.transform.parent = train.transform;
 
+			activateCarriages (0);   // 0 means we are in the rear carriage
+
 			int i, nacc;
 			float x, astop, xst;
 
 			xst = trainStationDispX [itrack] [0];         // starting position of front of train
 			float camDistFromFront = trainStationDispX [itrack] [0] - (camStartPos.x + camTrainDisp.x);
+			int carriagesBehind = 0;
+
 			float ust = 0;
 
 			// Process the track
@@ -201,7 +216,7 @@ public class TunnelGameController : MonoBehaviour
 					x = xst + ust * i + 0.5f * astart * i * i;
 					train.transform.position = new Vector3 (x, 0, 0);
 					cycleTunnel (x - camDistFromFront);
-					yield return null;
+					yield return new WaitForFixedUpdate();
 				}
 				xst = xst + ust*nacc + 0.5f * astart * nacc * nacc;   // distance covered in acc'n phase
 				ust = umax;
@@ -220,7 +235,7 @@ public class TunnelGameController : MonoBehaviour
 					x = xst + i * umax;
 					train.transform.position = new Vector3 (x, 0, 0);
 					cycleTunnel (x - camDistFromFront);
-					yield return null;
+					yield return new WaitForFixedUpdate();
 				}
 				xst = xst + n * umax;
 
@@ -232,6 +247,7 @@ public class TunnelGameController : MonoBehaviour
 
 					print ("wait for input");
 					inputMenu.SetActive (true);
+					textEntry.text = "---";
 
 					nentry = 0;                   // set by buttoms in inputMenu
 					for (i = 0; i < nsequence*nInputTime; i++) {
@@ -241,7 +257,7 @@ public class TunnelGameController : MonoBehaviour
 						train.transform.position = new Vector3 (x, 0, 0);
 						cycleTunnel (x - camDistFromFront);
 						countDown.text = (nsequence*nInputTime - i).ToString ();
-						yield return null;
+						yield return new WaitForFixedUpdate();
 					}
 					xst = xst + i * umax;
 
@@ -279,10 +295,25 @@ public class TunnelGameController : MonoBehaviour
 							train.transform.position = new Vector3 (x, 0, 0);
 							cycleTunnel (x - camDistFromFront);
 							i++;
-							yield return null;
+							yield return new WaitForFixedUpdate ();
 						}
 						xst = xst + i * umax;
 						camDistFromFront -= tunnelLength / 2;
+						carriagesBehind++;
+
+						activateCarriages (carriagesBehind);
+					} else {
+						GameObject monster = Instantiate (monsterPrefab) as GameObject;
+						monster.transform.parent = train.transform;
+						monster.transform.localPosition = new Vector3 (-camDistFromFront+2, 0, 0);
+						monster.transform.rotation = Quaternion.Euler (270, 270, 0);
+						monster.transform.localScale = new Vector3 (0.5f, 0.5f, 0.5f);
+
+						pos = mainCamera.transform.localPosition;
+						yield return StartCoroutine (mainCameraScript.moveTo (pos.x, pos.y, 0, 60));
+
+						yield return StartCoroutine (mainCameraScript.rotateTo (0, 90, 0, 20));
+						yield return StartCoroutine (mainCameraScript.moveTo (0, -1, 0, 60, true));
 					}
 
 				} else if (track [itrack] [istation] [0] == 'F') {
@@ -294,7 +325,7 @@ public class TunnelGameController : MonoBehaviour
 						train.transform.position = new Vector3 (x, 0, 0);
 						cycleTunnel (x - camDistFromFront);
 						i++;
-						yield return null;
+						yield return new WaitForFixedUpdate();
 					}
 					xst = xst + i * umax;
 				}
@@ -305,10 +336,17 @@ public class TunnelGameController : MonoBehaviour
 
 				int sectionsDone;
 				float totLength, distRemain;
+				float dispx;
+
+				if (calcDispx && istation != nstation-1) {
+					dispx = camDistFromFront - umin [itrack] [istation] * nLowSpeed [itrack] [istation] / 2;
+				} else {
+					dispx = trainStationDispX [itrack] [istation];
+				}
 			
 				sectionsDone = (int)((xst - xtun0) / tunnelLength);
 				totLength = (sectionsDone + nmore) * tunnelLength;
-				distRemain = totLength - (xst - xtun0) + stationLength / 2 + trainStationDispX [itrack] [istation];
+				distRemain = totLength - (xst - xtun0) + stationLength / 2 + dispx;
 				astop = (umin [itrack] [istation] * umin [itrack] [istation] - umax * umax) / (2 * distRemain);    
 				// v^2=u^2+2as (will be negative)
 
@@ -341,7 +379,7 @@ public class TunnelGameController : MonoBehaviour
 
 					for (i = 0; i < nOutChars; i++) {
 						outChars [i].SetActive (true);
-						outChars [i].transform.localPosition = new Vector3 (-4 + i * 4, 1, z);
+						outChars [i].transform.localPosition = new Vector3 (-(nOutChars - 1) * 2 + i * 4, 1, z);
 						outChars [i].transform.rotation = Quaternion.Euler (0, rotY, 0);
 					}
 
@@ -390,9 +428,9 @@ public class TunnelGameController : MonoBehaviour
 
 						string text;
 						if (track [itrack] [istation + i + 1] [1] == 'R')
-							text = "RIGHT";
+							text = "R";
 						else
-							text = "LEFT";
+							text = "L";
 
 						Text number = previewChars [0, i].GetComponentInChildren<Text> ();
 						number.text = text;
@@ -416,9 +454,9 @@ public class TunnelGameController : MonoBehaviour
 					x = xst + umax * i + 0.5f * astop * i * i;
 					train.transform.position = new Vector3 (x, 0, 0);
 					cycleTunnel (x - camDistFromFront);
-					yield return null;
+					yield return new WaitForFixedUpdate();
 				}
-				xst = station.transform.position.x + trainStationDispX [itrack] [istation];
+				xst = station.transform.position.x + dispx;
 				ust = umin [itrack] [istation];
 
 				//--------------------------------------------------
@@ -431,7 +469,7 @@ public class TunnelGameController : MonoBehaviour
 						x = xst + umin [itrack] [istation] * i;
 						train.transform.position = new Vector3 (x, 0, 0);
 						cycleTunnel (x - camDistFromFront);
-						yield return null;
+						yield return new WaitForFixedUpdate();
 					}
 
 					// -----------------------------------------------
@@ -439,14 +477,14 @@ public class TunnelGameController : MonoBehaviour
 					// -----------------------------------------------
 
 					if (tutorial && itrack == 0 && istation == 1) {
-						float lookCharsOffsetZ = -2;
+						float lookCharsOffsetZ = -2.65f;
 						float lookCharsRotateTo = 160;
 
 						yield return StartCoroutine (moveCameraTo (0, 0, lookCharsOffsetZ, 60, true));
-						yield return StartCoroutine (rotateCameraTo (0, lookCharsRotateTo, 0, 60));
+						yield return StartCoroutine (rotateCameraTo (0, lookCharsRotateTo, 0, 30));
 				
 						mbText.text = "What were those strange figures? " +
-						"They didn't look human...";
+							"They didn't look human... The sequence seemed important: '"+temp+"'";
 				
 						messageBox.SetActive (true);
 						pressedOK = false;
@@ -455,15 +493,26 @@ public class TunnelGameController : MonoBehaviour
 						}
 						messageBox.SetActive (false);
 				
-						yield return StartCoroutine (rotateCameraTo (0, -180, 0, 40));
+						yield return StartCoroutine (rotateCameraTo (0, -180, 0, 30));
 						yield return StartCoroutine (moveCameraTo (0, 0, -lookCharsOffsetZ, 40, true));
+					}
+					else if (tutorial && itrack==0 && istation==4){
+						mbText.text = "I wasn't asked for the sequence in that tunnel " +
+						"So I need to combine the two sequences to give: '" + temp + "'";
+
+						messageBox.SetActive (true);
+						pressedOK = false;
+						while (!pressedOK) {
+							yield return null;
+						}
+						messageBox.SetActive (false);												
 					}
 
 					for (i = nLowSpeed [itrack] [istation] / 2; i < nLowSpeed [itrack] [istation]; i++) {
 						x = xst + umin [itrack] [istation] * i;
 						train.transform.position = new Vector3 (x, 0, 0);
 						cycleTunnel (x - camDistFromFront);
-						yield return null;
+						yield return new WaitForFixedUpdate();
 					}
 					xst = xst + umin [itrack] [istation] * nLowSpeed [itrack] [istation];
 				}
@@ -477,13 +526,16 @@ public class TunnelGameController : MonoBehaviour
 			// Leave train. 
 			// -----------------------------------------------------------------------------
 
+			for (i = 0; i < nCarriages; i++)
+				carriages [i].SetActive (true);
+
 			if (mainCamera.transform.position.z > 0) {
 				yield return StartCoroutine (mainCameraScript.rotateTo (0, 180, 0, 30));
 			} else {
 				yield return StartCoroutine (mainCameraScript.rotateTo (0, 0, 0, 30));
 			}
 
-			Vector3 pos = mainCamera.transform.localPosition;
+			pos = mainCamera.transform.localPosition;
 			yield return StartCoroutine (mainCameraScript.moveTo (pos.x, pos.y, 0, 60));
 
 			yield return StartCoroutine (mainCameraScript.rotateTo (0, 90, 0, 20));
@@ -645,6 +697,12 @@ public class TunnelGameController : MonoBehaviour
         Debug.Log("btn 1");
 		typed_sequence [nentry] = "1";
 		nentry++;
+
+		string temp = "";
+		for (int i = 0; i < nentry; i++)
+			temp = temp + typed_sequence [i];
+		
+		textEntry.text = temp;
 	}
 	
 	public void button2Pressed ()
@@ -652,6 +710,12 @@ public class TunnelGameController : MonoBehaviour
         Debug.Log("btn 2");
         typed_sequence [nentry] = "2";
 		nentry++;
+
+		string temp = "";
+		for (int i = 0; i < nentry; i++)
+			temp = temp + typed_sequence [i];
+
+		textEntry.text = temp;
 	}
 	
 	public void button3Pressed ()
@@ -659,6 +723,12 @@ public class TunnelGameController : MonoBehaviour
         Debug.Log("btn 3");
         typed_sequence [nentry] = "3";
 		nentry++;
+
+		string temp = "";
+		for (int i = 0; i < nentry; i++)
+			temp = temp + typed_sequence [i];
+
+		textEntry.text = temp;
 	}
 
 	public void buttonOKPressed ()
@@ -715,6 +785,24 @@ public class TunnelGameController : MonoBehaviour
 			yield return StartCoroutine (mainCameraScript.rotateTo (0, 180, 0, 30));
 
 		mainCameraScript.setFireball (false);
+	}
+
+	// ############################################################
+
+	void activateCarriages(int carriagesBehind)
+	{
+
+		for (int i = 0; i < nCarriages; i++) {
+			carriages [i].SetActive (false);
+		}
+
+		int myCarriage = nCarriages - 1 - carriagesBehind;
+
+		if (myCarriage>=0)
+			carriages [myCarriage].SetActive (true);
+
+		if (myCarriage-1 >= 0)
+			carriages [myCarriage-1].SetActive (true);
 	}
 
 }

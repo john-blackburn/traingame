@@ -58,7 +58,7 @@ public class TunnelCameraController : MonoBehaviour {
 		float ds = 1.0f / nframes;
 		for (int i=0; i<=nframes; i++) {
 			transform.localPosition = r1 + (r2 - r1) * i * ds;
-			yield return null;
+			yield return new WaitForFixedUpdate();
 		}
 	}
 
@@ -70,7 +70,7 @@ public class TunnelCameraController : MonoBehaviour {
 		float ds = 1.0f / nframes;
 		for (int i=0; i<=nframes; i++) {
 			transform.rotation = Quaternion.Slerp (q1, q2, i * ds);
-			yield return null;
+			yield return new WaitForFixedUpdate();
 		}
 	}
 		
