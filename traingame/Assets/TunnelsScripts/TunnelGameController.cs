@@ -11,12 +11,14 @@ public class TunnelGameController : MonoBehaviour
 
 	public GameObject TrainCabinPrefab, TunnelSectionPrefab, StationPrefab, OutCharPrefab, fireballPrefab;
 	public GameObject monsterPrefab;
-	public GameObject inputMenu, messageBox;
+	public GameObject inputMenu, messageBox, controls;
 	public Text countDown, mbText, textEntry;
 	public Vector3 camStartPos, camTrainDisp;
 	public float trainInitX, camStartRot;
 	public float astart, umax;   // eg 0.005, 1
 	public int nmore, nInputTime;            // eg 6
+	public GameObject mainMenu;
+	public Text trackText;
 
 	private float[][] trainStationDispX,umin;    // eg 20,0.03
 	private int[][] nLowSpeed;                   // eg 100
@@ -60,17 +62,17 @@ public class TunnelGameController : MonoBehaviour
         //		track[0]            =new string[5]{"","FP1",".R2","IL3","IE"};
 
 		track[0]            =new string[]{"",".R2","IR3","IR2",".R2","IE"};
-		trainStationDispX[0]=new float []{20+13.3f,32,0,0,0,5};   // first is start station
+		trainStationDispX[0]=new float []{33.3f,32,0,0,0,5};   // first is start station
 		umin[0]             =new float []{0, 0, 0.07f, 0.07f, 0.07f, 0};      // first and last not used
 		nLowSpeed[0]        =new int   []{0,100,250,250,250,0};          // first and last not used
 
-		track[1]            =new string[]{"",".R3","IR3","IP1",".L3","IE"};
-		trainStationDispX[1]=new float []{20,20,10,10,20,20};   // first is start station
-		umin[1]             =new float []{0, 0, 0.1f, 0.1f, 0.1f, 0};      // first and last not used
-		nLowSpeed[1]        =new int   []{0,100,300,300,200,0};          // first and last not used
+		track[1]            =new string[]{"",".R3","IP1",".L3","IP2",".R2",".L2","IE"};
+		trainStationDispX[1]=new float []{33.3f,0,0,0,0,0,0,5};   // first is start station
+		umin[1]             =new float []{0,  0, 0.1f, 0.1f, 0.1f, 0, 0, 0};      // first and last not used
+		nLowSpeed[1]        =new int   []{0,100,  300,  300,  200, 0, 0, 0};          // first and last not used
 
 		track[2]            =new string[]{"","FR3",".E","IR3",".R3","IE"};
-		trainStationDispX[2]=new float []{20,20,10,10,20,20};   // first is start station
+		trainStationDispX[2]=new float []{33.3f,20,10,10,20,20};   // first is start station
 		umin[2]             =new float []{0, 0, 0.8f, 0.1f, 0.1f, 0};      // first and last not used
 		nLowSpeed[2]        =new int   []{0,100,30,300,200,0};          // first and last not used
 
@@ -78,6 +80,8 @@ public class TunnelGameController : MonoBehaviour
 
 		inputMenu.SetActive (false);
 		messageBox.SetActive (false);
+		mainMenu.SetActive (false);
+		controls.SetActive (false);
 
 		mainCamera = GameObject.FindWithTag ("MainCamera");
 		mainCameraScript = mainCamera.GetComponent<TunnelCameraController> ();
@@ -163,134 +167,213 @@ public class TunnelGameController : MonoBehaviour
 	{
 		string temp="";
 		Vector3 pos;
+		int i;
 
 		bool tutorial = true;    // if true, show the tutorial text
-		bool cheat = true;       // if true, monster does not kill you, progress to next carriage
+		bool cheat = false;       // if true, monster does not kill you, progress to next carriage
 		bool calcDispx = true;   // if true, calculate values in trainStationDispX to give best view of characters
 
-		for (itrack = 0; itrack < ntracks; itrack++) {
-			int nsequence = 0;
+		while (true) {  // main game loop
+
+			controls.SetActive (false);
+			trackText.text = "";
+			mainCamera.transform.parent = null;     // camera gets off train
+
+			pos = station.transform.position;
+			pos.x = 0;
+			station.transform.position = pos;
+
+			tunnel.transform.position = new Vector3 (stationLength / 2, 0, 0);
+
+			for (i = 0; i < nCarriages; i++)
+				carriages [i].SetActive (true);			
 
 			mainCamera.transform.position = camStartPos;   // -4,0,10
 			mainCamera.transform.rotation = Quaternion.Euler (0, camStartRot, 0);
 
-			yield return StartCoroutine (trainArrives ());
+			train.transform.position = Vector3.zero;
+
+			mainMenu.SetActive (true);
+
+			int iframe = 0;
+			finishedMoving = false;
+			while (!finishedMoving) {
+				mainCamera.transform.position = new Vector3 (10*Mathf.Cos (iframe * 0.01f), 0, 10*Mathf.Sin (iframe * 0.01f));
+				mainCamera.transform.LookAt (train.transform);
+				iframe++;
+				yield return null;
+			}
+
+			mainMenu.SetActive (false);
 				
-			yield return StartCoroutine (mainCameraScript.rotateTo (0, 180, 0, 20));
-			yield return StartCoroutine (mainCameraScript.moveTo (camStartPos.x, 0, 0, 60));
-			yield return StartCoroutine (mainCameraScript.rotateTo (0, -90, 0, 20));
-			yield return StartCoroutine (mainCameraScript.moveTo (camStartPos.x + camTrainDisp.x, 0, 0, 60));
-			yield return StartCoroutine (mainCameraScript.rotateTo (0, 180, 0, 20));
-			yield return StartCoroutine (mainCameraScript.moveTo (camStartPos.x + camTrainDisp.x, 0, camTrainDisp.z, 60));
+			// Loop over tracks
+			for (itrack = 0; itrack < ntracks; itrack++) {
+				trackText.text = "Track: " + itrack.ToString ();
+				int nsequence = 0;
 
-			mainCamera.transform.parent = train.transform;
+				mainCamera.transform.position = camStartPos;   // -4,0,10
+				mainCamera.transform.rotation = Quaternion.Euler (0, camStartRot, 0);
 
-			activateCarriages (0);   // 0 means we are in the rear carriage
+				yield return StartCoroutine (trainArrives ());
+				
+				yield return StartCoroutine (mainCameraScript.rotateTo (0, 180, 0, 20));
+				yield return StartCoroutine (mainCameraScript.moveTo (camStartPos.x, 0, 0, 60));
+				yield return StartCoroutine (mainCameraScript.rotateTo (0, -90, 0, 20));
+				yield return StartCoroutine (mainCameraScript.moveTo (camStartPos.x + camTrainDisp.x, 0, 0, 60));
+				yield return StartCoroutine (mainCameraScript.rotateTo (0, 180, 0, 20));
+				yield return StartCoroutine (mainCameraScript.moveTo (camStartPos.x + camTrainDisp.x, 0, camTrainDisp.z, 60));
 
-			int i, nacc;
-			float x, astop, xst;
+				if (itrack > 1)
+					controls.SetActive (true);
+				else
+					controls.SetActive (false);
 
-			xst = trainStationDispX [itrack] [0];         // starting position of front of train
-			float camDistFromFront = trainStationDispX [itrack] [0] - (camStartPos.x + camTrainDisp.x);
-			int carriagesBehind = 0;
+				trackText.text = "";
 
-			float ust = 0;
+				mainCamera.transform.parent = train.transform;
 
-			// Process the track
-			//            0   1   2   3   4
-			//            000 .R3 IL3 IR3 IE.;
-			int nstation = track [itrack].Length;   // 5 stations (incl beginning and end)
+				activateCarriages (0);   // 0 means we are in the rear carriage
 
-			for (int istation = 1; istation < nstation; istation++) {
-				print ("station text" + track [itrack] [istation]);
+				int nacc;
+				float x, astop, xst;
 
-				float xtun0 = tunnel.transform.position.x;   // starting position of tunnel back-end
-				nacc = (int)((umax - ust) / astart);   // no time steps to get to max speed
+				xst = trainStationDispX [itrack] [0];         // starting position of front of train
+				float camDistFromFront = trainStationDispX [itrack] [0] - (camStartPos.x + camTrainDisp.x);
+				int carriagesBehind = 0;
 
-				//--------------------------------------------------------------------
-				// Acceleration phase
-				//--------------------------------------------------------------------
+				float ust = 0;
 
-				print ("accelerate");
-				for (i = 0; i < nacc; i++) {
-					x = xst + ust * i + 0.5f * astart * i * i;
-					train.transform.position = new Vector3 (x, 0, 0);
-					cycleTunnel (x - camDistFromFront);
-					yield return new WaitForFixedUpdate();
-				}
-				xst = xst + ust*nacc + 0.5f * astart * nacc * nacc;   // distance covered in acc'n phase
-				ust = umax;
+				// Process the track
+				//            0   1   2   3   4
+				//            000 .R3 IL3 IR3 IE.;
+				int nstation = track [itrack].Length;   // 5 stations (incl beginning and end)
 
-				outCharGroup.SetActive (false);
-				previewCharGroup.SetActive (false);
+				for (int istation = 1; istation < nstation; istation++) {
+					print ("station text" + track [itrack] [istation]);
 
-				//--------------------------------------------------------------------
-				// Constant speed phase for n frames
-				//--------------------------------------------------------------------
+					float xtun0 = tunnel.transform.position.x;   // starting position of tunnel back-end
+					nacc = (int)((umax - ust) / astart);   // no time steps to get to max speed
 
-				int n = Random.Range (100, 500);
-				print (n + " frames at constant speed");
+					//--------------------------------------------------------------------
+					// Acceleration phase
+					//--------------------------------------------------------------------
 
-				for (i = 0; i < n; i++) {
-					x = xst + i * umax;
-					train.transform.position = new Vector3 (x, 0, 0);
-					cycleTunnel (x - camDistFromFront);
-					yield return new WaitForFixedUpdate();
-				}
-				xst = xst + n * umax;
+					print ("accelerate");
+					for (i = 0; i < nacc; i++) {
+						x = xst + ust * i + 0.5f * astart * i * i;
+						train.transform.position = new Vector3 (x, 0, 0);
+						cycleTunnel (x - camDistFromFront);
+						yield return new WaitForFixedUpdate ();
+					}
+					xst = xst + ust * nacc + 0.5f * astart * nacc * nacc;   // distance covered in acc'n phase
+					ust = umax;
 
-				//--------------------------------------------------------------------
-				// continue moving while user enters code (if needed)
-				//--------------------------------------------------------------------
+					outCharGroup.SetActive (false);
+					previewCharGroup.SetActive (false);
 
-				if (track [itrack] [istation] [0] == 'I') {
+					//--------------------------------------------------------------------
+					// Constant speed phase for n frames
+					//--------------------------------------------------------------------
 
-					print ("wait for input");
-					inputMenu.SetActive (true);
-					textEntry.text = "---";
+					int n = Random.Range (100, 500);
+					print (n + " frames at constant speed");
 
-					nentry = 0;                   // set by buttoms in inputMenu
-					for (i = 0; i < nsequence*nInputTime; i++) {
-						if (nentry >= nsequence)
-							break;
+					for (i = 0; i < n; i++) {
 						x = xst + i * umax;
 						train.transform.position = new Vector3 (x, 0, 0);
 						cycleTunnel (x - camDistFromFront);
-						countDown.text = (nsequence*nInputTime - i).ToString ();
-						yield return new WaitForFixedUpdate();
+						yield return new WaitForFixedUpdate ();
 					}
-					xst = xst + i * umax;
+					xst = xst + n * umax;
 
-					inputMenu.SetActive (false);
+					//--------------------------------------------------------------------
+					// ask for sequence in tunnel
+					//--------------------------------------------------------------------
 
-					temp = "";
-					for (i = 0; i < nentry; i++)
-						temp += typed_sequence [i];
-					print ("typed sequence=" + temp);
+					if (track [itrack] [istation] [0] == 'I') {
 
-					bool correct;
+						print ("wait for input");
+						inputMenu.SetActive (true);
+						textEntry.text = "---";
 
-					if (nentry != nsequence)
-						correct = false;
-					else {
-						correct = true;
-						for (i = 0; i < nsequence; i++) {
-							if (sequence [i] != typed_sequence [i]) {
-								correct = false;
+						nentry = 0;                   // set by buttoms in inputMenu
+						for (i = 0; i < nsequence * nInputTime; i++) {
+							if (nentry >= nsequence)
 								break;
+							x = xst + i * umax;
+							train.transform.position = new Vector3 (x, 0, 0);
+							cycleTunnel (x - camDistFromFront);
+							countDown.text = (nsequence * nInputTime - i).ToString ();
+							yield return new WaitForFixedUpdate ();
+						}
+						xst = xst + i * umax;
+
+						inputMenu.SetActive (false);
+
+						temp = "";
+						for (i = 0; i < nentry; i++)
+							temp += typed_sequence [i];
+						print ("typed sequence=" + temp);
+
+						bool correct;
+
+						if (nentry != nsequence)
+							correct = false;
+						else {
+							correct = true;
+							for (i = 0; i < nsequence; i++) {
+								if (sequence [i] != typed_sequence [i]) {
+									correct = false;
+									break;
+								}
 							}
 						}
-					}
-					print ("got it right? " + correct);
+						print ("got it right? " + correct);
 
-					nsequence = 0;    // reset sequence
+						nsequence = 0;    // reset sequence
 
-					if (correct) {
-						finishedMoving = false;
-						StartCoroutine (gotoNextCarriage ());
+						if (correct) {
+							finishedMoving = false;
+							StartCoroutine (gotoNextCarriage ());
+
+							i = 0;
+							while (!finishedMoving) {
+								x = xst + i * umax;
+								train.transform.position = new Vector3 (x, 0, 0);
+								cycleTunnel (x - camDistFromFront);
+								i++;
+								yield return new WaitForFixedUpdate ();
+							}
+							xst = xst + i * umax;
+							camDistFromFront -= tunnelLength / 2;
+							carriagesBehind++;
+
+							activateCarriages (carriagesBehind);
+						} else {
+							finishedMoving = false;
+							StartCoroutine (jumpScare (camDistFromFront));
+
+							i = 0;
+							while (!finishedMoving) {
+								x = xst + i * umax;
+								train.transform.position = new Vector3 (x, 0, 0);
+								cycleTunnel (x - camDistFromFront);
+								i++;
+								yield return new WaitForFixedUpdate ();
+							}
+							xst = xst + i * umax;
+							if (!cheat) goto jumpout; // exit to main game loop
+						}
+
+					// -------------------------------------------------------
+					// Fireball attack in tunnel
+					// -------------------------------------------------------
+
+					} else if (track [itrack] [istation] [0] == 'F') {
+						StartCoroutine (fireballAttack ());
 
 						i = 0;
-						while (!finishedMoving) {
+						while (mainCameraScript.getFireball ()) {
 							x = xst + i * umax;
 							train.transform.position = new Vector3 (x, 0, 0);
 							cycleTunnel (x - camDistFromFront);
@@ -298,276 +381,268 @@ public class TunnelGameController : MonoBehaviour
 							yield return new WaitForFixedUpdate ();
 						}
 						xst = xst + i * umax;
-						camDistFromFront -= tunnelLength / 2;
-						carriagesBehind++;
+					}
 
-						activateCarriages (carriagesBehind);
+					//--------------------------------------------------------------------
+					// Slow down phase calculation
+					//--------------------------------------------------------------------
+
+					int sectionsDone;
+					float totLength, distRemain;
+					float dispx;
+
+					if (calcDispx && istation != nstation - 1) {
+						dispx = camDistFromFront - umin [itrack] [istation] * nLowSpeed [itrack] [istation] / 2;
 					} else {
-						GameObject monster = Instantiate (monsterPrefab) as GameObject;
-						monster.transform.parent = train.transform;
-						monster.transform.localPosition = new Vector3 (-camDistFromFront+2, 0, 0);
-						monster.transform.rotation = Quaternion.Euler (270, 270, 0);
-						monster.transform.localScale = new Vector3 (0.5f, 0.5f, 0.5f);
-
-						pos = mainCamera.transform.localPosition;
-						yield return StartCoroutine (mainCameraScript.moveTo (pos.x, pos.y, 0, 60));
-
-						yield return StartCoroutine (mainCameraScript.rotateTo (0, 90, 0, 20));
-						yield return StartCoroutine (mainCameraScript.moveTo (0, -1, 0, 60, true));
+						dispx = trainStationDispX [itrack] [istation];
 					}
-
-				} else if (track [itrack] [istation] [0] == 'F') {
-					StartCoroutine (fireballAttack ());
-
-					i = 0;
-					while (mainCameraScript.getFireball ()) {
-						x = xst + i * umax;
-						train.transform.position = new Vector3 (x, 0, 0);
-						cycleTunnel (x - camDistFromFront);
-						i++;
-						yield return new WaitForFixedUpdate();
-					}
-					xst = xst + i * umax;
-				}
-
-				//--------------------------------------------------------------------
-				// Slow down phase calculation
-				//--------------------------------------------------------------------
-
-				int sectionsDone;
-				float totLength, distRemain;
-				float dispx;
-
-				if (calcDispx && istation != nstation-1) {
-					dispx = camDistFromFront - umin [itrack] [istation] * nLowSpeed [itrack] [istation] / 2;
-				} else {
-					dispx = trainStationDispX [itrack] [istation];
-				}
 			
-				sectionsDone = (int)((xst - xtun0) / tunnelLength);
-				totLength = (sectionsDone + nmore) * tunnelLength;
-				distRemain = totLength - (xst - xtun0) + stationLength / 2 + dispx;
-				astop = (umin [itrack] [istation] * umin [itrack] [istation] - umax * umax) / (2 * distRemain);    
-				// v^2=u^2+2as (will be negative)
+					sectionsDone = (int)((xst - xtun0) / tunnelLength);
+					totLength = (sectionsDone + nmore) * tunnelLength;
+					distRemain = totLength - (xst - xtun0) + stationLength / 2 + dispx;
+					astop = (umin [itrack] [istation] * umin [itrack] [istation] - umax * umax) / (2 * distRemain);    
+					// v^2=u^2+2as (will be negative)
 
-				//--------------------------------------------------------------------
-				// Move Station. Set numbers on outside characters' signs (if needed)
-				//--------------------------------------------------------------------
+					//--------------------------------------------------------------------
+					// Move Station. Set numbers on outside characters' signs (if needed)
+					//--------------------------------------------------------------------
 
-				station.transform.Translate (new Vector3 (stationLength + totLength, 0, 0));
+					station.transform.Translate (new Vector3 (stationLength + totLength, 0, 0));
 
-				//                "000 .R3 IL3 IR3 IE. ";
-				if (track [itrack] [istation] [1] == 'E') {
-					outCharGroup.SetActive (false);
-					previewCharGroup.SetActive (false);
-				} else if (track [itrack] [istation] [1] == 'R' || track [itrack] [istation] [1] == 'L') {
+					//                "000 .R3 IL3 IR3 IE. ";
+					if (track [itrack] [istation] [1] == 'E') {
+						outCharGroup.SetActive (false);
+						previewCharGroup.SetActive (false);
+					} else if (track [itrack] [istation] [1] == 'R' || track [itrack] [istation] [1] == 'L') {
 
-					float z, rotY;
-					if (track [itrack] [istation] [1] == 'R') {
-						z = -8;
-						rotY = 0;
-					} else {
-						z = 8;
-						rotY = 180;
-					}
+						float z, rotY;
+						if (track [itrack] [istation] [1] == 'R') {
+							z = -8;
+							rotY = 0;
+						} else {
+							z = 8;
+							rotY = 180;
+						}
 
-					int nOutChars = track [itrack] [istation] [2] - '0';
+						int nOutChars = track [itrack] [istation] [2] - '0';
 
-					for (i = 0; i < maxOutChars; i++) {
-						outChars [i].SetActive (false);
-					}
+						for (i = 0; i < maxOutChars; i++) {
+							outChars [i].SetActive (false);
+						}
 
-					for (i = 0; i < nOutChars; i++) {
-						outChars [i].SetActive (true);
-						outChars [i].transform.localPosition = new Vector3 (-(nOutChars - 1) * 2 + i * 4, 1, z);
-						outChars [i].transform.rotation = Quaternion.Euler (0, rotY, 0);
-					}
+						for (i = 0; i < nOutChars; i++) {
+							outChars [i].SetActive (true);
+							outChars [i].transform.localPosition = new Vector3 (-(nOutChars - 1) * 2 + i * 4, 1, z);
+							outChars [i].transform.rotation = Quaternion.Euler (0, rotY, 0);
+						}
 
-					outCharGroup.SetActive (true);
-					outCharGroup.transform.position = new Vector3 (station.transform.position.x,
-						station.transform.position.y, 0);
+						outCharGroup.SetActive (true);
+						outCharGroup.transform.position = new Vector3 (station.transform.position.x,
+							station.transform.position.y, 0);
 							
-					for (i = 0; i < nOutChars; i++) {
+						for (i = 0; i < nOutChars; i++) {
 				
-						float r = Random.value;
-						if (r < 0.333)
-							temp = "1";
-						else if (r < 0.666)
-							temp = "2";
-						else
-							temp = "3";
+							float r = Random.value;
+							if (r < 0.333)
+								temp = "1";
+							else if (r < 0.666)
+								temp = "2";
+							else
+								temp = "3";
 
-						sequence [nsequence] = temp;
-						nsequence++;
+							sequence [nsequence] = temp;
+							nsequence++;
 
-						Text number = outChars [i].GetComponentInChildren<Text> ();
-						number.text = temp;
-					}
+							Text number = outChars [i].GetComponentInChildren<Text> ();
+							number.text = temp;
+						}
 			
-					temp = "";
-					for (i = 0; i < nsequence; i++)
-						temp += sequence [i];
-					print ("sequence=" + temp);
+						temp = "";
+						for (i = 0; i < nsequence; i++)
+							temp += sequence [i];
+						print ("sequence=" + temp);
 
-				} else if (track [itrack] [istation] [1] == 'P') {
+					} else if (track [itrack] [istation] [1] == 'P') {
 
-					// ----------------------------------------------------
-					// set preview characters
-					// ----------------------------------------------------
+						// ----------------------------------------------------
+						// set preview characters
+						// ----------------------------------------------------
 
-					int nPreviewChars = track [itrack] [istation] [2] - '0';
+						int nPreviewChars = track [itrack] [istation] [2] - '0';
 
-					for (i = 0; i < 3; i++) {
-						previewChars [0, i].SetActive (false);
-						previewChars [1, i].SetActive (false);
-					}
+						for (i = 0; i < 3; i++) {
+							previewChars [0, i].SetActive (false);
+							previewChars [1, i].SetActive (false);
+						}
 
-					for (i = 0; i < nPreviewChars; i++) {
-						previewChars [0, i].SetActive (true);
-						previewChars [1, i].SetActive (true);
+						for (i = 0; i < nPreviewChars; i++) {
+							previewChars [0, i].SetActive (true);
+							previewChars [1, i].SetActive (true);
 
-						string text;
-						if (track [itrack] [istation + i + 1] [1] == 'R')
-							text = "R";
-						else
-							text = "L";
+							string text;
+							if (track [itrack] [istation + i + 1] [1] == 'R')
+								text = "R";
+							else
+								text = "L";
 
-						Text number = previewChars [0, i].GetComponentInChildren<Text> ();
-						number.text = text;
+							Text number = previewChars [0, i].GetComponentInChildren<Text> ();
+							number.text = text;
 
-						number = previewChars [1, i].GetComponentInChildren<Text> ();
-						number.text = text;
-					}
+							number = previewChars [1, i].GetComponentInChildren<Text> ();
+							number.text = text;
+						}
 
-					previewCharGroup.SetActive (true);
-					previewCharGroup.transform.position = 
+						previewCharGroup.SetActive (true);
+						previewCharGroup.transform.position = 
 					new Vector3 (station.transform.position.x, station.transform.position.y, 0);
-				}
+					}
 
-				//--------------------------------------------------------------------
-				// Slow down phase
-				//--------------------------------------------------------------------
+					//--------------------------------------------------------------------
+					// Slow down phase
+					//--------------------------------------------------------------------
 			
-				print ("sectionsDone" + sectionsDone);
-				print ("slow down" + astop);
-				for (i = 0; i <= (int)((umin [itrack] [istation] - umax) / astop); i++) {
-					x = xst + umax * i + 0.5f * astop * i * i;
-					train.transform.position = new Vector3 (x, 0, 0);
-					cycleTunnel (x - camDistFromFront);
-					yield return new WaitForFixedUpdate();
-				}
-				xst = station.transform.position.x + dispx;
-				ust = umin [itrack] [istation];
-
-				//--------------------------------------------------
-				// Move slowly through the station 
-				// (divided into 2 parts with tutorial text between)
-				//--------------------------------------------------
-
-				if (istation != nstation) {
-					for (i = 0; i < nLowSpeed [itrack] [istation] / 2; i++) {
-						x = xst + umin [itrack] [istation] * i;
+					print ("sectionsDone" + sectionsDone);
+					print ("slow down" + astop);
+					for (i = 0; i <= (int)((umin [itrack] [istation] - umax) / astop); i++) {
+						x = xst + umax * i + 0.5f * astop * i * i;
 						train.transform.position = new Vector3 (x, 0, 0);
 						cycleTunnel (x - camDistFromFront);
-						yield return new WaitForFixedUpdate();
+						yield return new WaitForFixedUpdate ();
 					}
+					xst = station.transform.position.x + dispx;
+					ust = umin [itrack] [istation];
 
-					// -----------------------------------------------
-					// Put tutorial dialogs here
-					// -----------------------------------------------
+					//--------------------------------------------------
+					// Move slowly through the station 
+					// (divided into 2 parts with tutorial text between)
+					//--------------------------------------------------
 
-					if (tutorial && itrack == 0 && istation == 1) {
-						float lookCharsOffsetZ = -2.65f;
-						float lookCharsRotateTo = 160;
-
-						yield return StartCoroutine (moveCameraTo (0, 0, lookCharsOffsetZ, 60, true));
-						yield return StartCoroutine (rotateCameraTo (0, lookCharsRotateTo, 0, 30));
-				
-						mbText.text = "What were those strange figures? " +
-							"They didn't look human... The sequence seemed important: '"+temp+"'";
-				
-						messageBox.SetActive (true);
-						pressedOK = false;
-						while (!pressedOK) {
-							yield return null;
+					if (istation != nstation) {
+						for (i = 0; i < nLowSpeed [itrack] [istation] / 2; i++) {
+							x = xst + umin [itrack] [istation] * i;
+							train.transform.position = new Vector3 (x, 0, 0);
+							cycleTunnel (x - camDistFromFront);
+							yield return new WaitForFixedUpdate ();
 						}
-						messageBox.SetActive (false);
+
+						// -----------------------------------------------
+						// Put tutorial dialogs here
+						// -----------------------------------------------
+
+						if (tutorial && itrack == 0 && istation == 1) {
+							float lookCharsOffsetZ = -2.65f;
+							float lookCharsRotateTo = 160;
+
+							yield return StartCoroutine (moveCameraTo (0, 0, lookCharsOffsetZ, 60, true));
+							yield return StartCoroutine (rotateCameraTo (0, lookCharsRotateTo, 0, 30));
 				
-						yield return StartCoroutine (rotateCameraTo (0, -180, 0, 30));
-						yield return StartCoroutine (moveCameraTo (0, 0, -lookCharsOffsetZ, 40, true));
-					}
-					else if (tutorial && itrack==0 && istation==4){
-						mbText.text = "I wasn't asked for the sequence in that tunnel " +
-						"So I need to combine the two sequences to give: '" + temp + "'";
+							mbText.text = "What were those strange figures? " +
+							"They didn't look human... The sequence seemed important: '" + temp + "'";
+				
+							messageBox.SetActive (true);
+							pressedOK = false;
+							while (!pressedOK) {
+								yield return null;
+							}
+							messageBox.SetActive (false);
+				
+							yield return StartCoroutine (rotateCameraTo (0, -180, 0, 30));
+							yield return StartCoroutine (moveCameraTo (0, 0, -lookCharsOffsetZ, 40, true));
+						} else if (tutorial && itrack == 0 && istation == 4) {
+							mbText.text = "I wasn't asked for the sequence in that tunnel " +
+							"So I need to combine the two sequences to give: '" + temp + "'";
 
-						messageBox.SetActive (true);
-						pressedOK = false;
-						while (!pressedOK) {
-							yield return null;
+							messageBox.SetActive (true);
+							pressedOK = false;
+							while (!pressedOK) {
+								yield return null;
+							}
+							messageBox.SetActive (false);												
+						} else if (tutorial && itrack == 1 && (istation == 2 || istation==4 || istation==6)) {
+							if (istation == 2)
+								mbText.text = "The little guy was telling me the next sequence would be shown on the LEFT platform. " +
+								"Press 'SWITCH' to look out the other window";
+							else if (istation == 4)
+								mbText.text = "So I should look RIGHT in the next station, then LEFT in the station after that";
+							else
+								mbText.text = "Remember the sequence builds up (if not input) so it is now: "+temp;
+							
+							controls.SetActive (true);
+							
+							messageBox.SetActive (true);
+							pressedOK = false;
+							while (!pressedOK) {
+								yield return null;
+							}
+							messageBox.SetActive (false);
 						}
-						messageBox.SetActive (false);												
+
+						for (i = nLowSpeed [itrack] [istation] / 2; i < nLowSpeed [itrack] [istation]; i++) {
+							x = xst + umin [itrack] [istation] * i;
+							train.transform.position = new Vector3 (x, 0, 0);
+							cycleTunnel (x - camDistFromFront);
+							yield return new WaitForFixedUpdate ();
+						}
+						xst = xst + umin [itrack] [istation] * nLowSpeed [itrack] [istation];
 					}
 
-					for (i = nLowSpeed [itrack] [istation] / 2; i < nLowSpeed [itrack] [istation]; i++) {
-						x = xst + umin [itrack] [istation] * i;
-						train.transform.position = new Vector3 (x, 0, 0);
-						cycleTunnel (x - camDistFromFront);
-						yield return new WaitForFixedUpdate();
-					}
-					xst = xst + umin [itrack] [istation] * nLowSpeed [itrack] [istation];
+					tunnel.transform.Translate (new Vector3 (3 * tunnelLength + stationLength, 0, 0));
+				}  // istation loop
+
+				print ("Level complete");
+
+				// -----------------------------------------------------------------------------
+				// Leave train. 
+				// -----------------------------------------------------------------------------
+
+				controls.SetActive (false);
+
+				for (i = 0; i < nCarriages; i++)
+					carriages [i].SetActive (true);
+
+				if (mainCamera.transform.position.z > 0) {
+					yield return StartCoroutine (mainCameraScript.rotateTo (0, 180, 0, 30));
+				} else {
+					yield return StartCoroutine (mainCameraScript.rotateTo (0, 0, 0, 30));
 				}
 
-				tunnel.transform.Translate (new Vector3 (3 * tunnelLength + stationLength, 0, 0));
-			}  // istation loop
+				pos = mainCamera.transform.localPosition;
+				yield return StartCoroutine (mainCameraScript.moveTo (pos.x, pos.y, 0, 60));
 
-			print ("Level complete");
+				yield return StartCoroutine (mainCameraScript.rotateTo (0, 90, 0, 20));
+				yield return StartCoroutine (mainCameraScript.moveTo (-camTrainDisp.x, 0, 0, 60, true));
+				yield return StartCoroutine (mainCameraScript.rotateTo (0, 0, 0, 20));
+				yield return StartCoroutine (mainCameraScript.moveTo (0, 0, camStartPos.z, 60, true));
 
-			// -----------------------------------------------------------------------------
-			// Leave train. 
-			// -----------------------------------------------------------------------------
+				yield return StartCoroutine (mainCameraScript.rotateTo (0, camStartRot, 0, 20));
 
-			for (i = 0; i < nCarriages; i++)
-				carriages [i].SetActive (true);
+				mainCamera.transform.parent = null;     // camera gets off train
 
-			if (mainCamera.transform.position.z > 0) {
-				yield return StartCoroutine (mainCameraScript.rotateTo (0, 180, 0, 30));
-			} else {
-				yield return StartCoroutine (mainCameraScript.rotateTo (0, 0, 0, 30));
-			}
+				// -----------------------------------------------------------------------
+				// Move station, camera, train back to x=0
+				// -----------------------------------------------------------------------
 
-			pos = mainCamera.transform.localPosition;
-			yield return StartCoroutine (mainCameraScript.moveTo (pos.x, pos.y, 0, 60));
+				Vector3 disp = mainCamera.transform.position - station.transform.position;  // how far down the train we got
+				disp.y = 0;
 
-			yield return StartCoroutine (mainCameraScript.rotateTo (0, 90, 0, 20));
-			yield return StartCoroutine (mainCameraScript.moveTo (-camTrainDisp.x, 0, 0, 60, true));
-			yield return StartCoroutine (mainCameraScript.rotateTo (0, 0, 0, 20));
-			yield return StartCoroutine (mainCameraScript.moveTo (0, 0, camStartPos.z, 60, true));
+				pos = station.transform.position;
+				pos.x = 0;
+				station.transform.position = pos;
 
-			yield return StartCoroutine (mainCameraScript.rotateTo (0, camStartRot, 0, 20));
+				mainCamera.transform.position = disp;
 
-			mainCamera.transform.parent = null;     // camera gets off train
+				tunnel.transform.position = new Vector3 (stationLength / 2, 0, 0);
 
-			// -----------------------------------------------------------------------
-			// Move station, camera, train back to x=0
-			// -----------------------------------------------------------------------
+				train.transform.position = new Vector3 (trainStationDispX [itrack] [nstation - 1], 0, 0);
 
-			Vector3 disp = mainCamera.transform.position - station.transform.position;  // how far down the train we got
-			disp.y = 0;
+				yield return StartCoroutine (trainLeaves ());
+				yield return StartCoroutine (mainCameraScript.moveTo (camStartPos.x, camStartPos.y, camStartPos.z, 60));
 
-			pos = station.transform.position;
-			pos.x = 0;
-			station.transform.position = pos;
+			}  // loop over tracks
 
-			mainCamera.transform.position = disp;
+			jumpout: print ("jumped out");
 
-			tunnel.transform.position = new Vector3 (stationLength / 2, 0, 0);
-
-			train.transform.position = new Vector3 (trainStationDispX [itrack] [nstation - 1], 0, 0);
-
-			yield return StartCoroutine (trainLeaves ());
-			yield return StartCoroutine (mainCameraScript.moveTo (camStartPos.x, camStartPos.y, camStartPos.z, 60));
-
-		}
+		}  // end of main game loop
 
 	}
 
@@ -736,17 +811,85 @@ public class TunnelGameController : MonoBehaviour
 		pressedOK = true;
 	}
 
+	public void buttonStartPressed()
+	{
+		finishedMoving = true;
+	}
+
+	// ############################################################
+
+	IEnumerator jumpScare(float camDistFromFront)
+	{
+
+		float r = Random.value;
+
+		if (r < 0.5f) {
+
+			GameObject monster = Instantiate (monsterPrefab) as GameObject;
+			monster.transform.parent = train.transform;
+			monster.transform.localPosition = new Vector3 (-camDistFromFront + 2, 0, 0);
+			monster.transform.rotation = Quaternion.Euler (270, 270, 0);
+			monster.transform.localScale = new Vector3 (0.5f, 0.5f, 0.5f);
+
+			Vector3 pos = mainCamera.transform.localPosition;
+			yield return StartCoroutine (mainCameraScript.moveTo (pos.x, pos.y, 0, 60));
+
+			yield return StartCoroutine (mainCameraScript.rotateTo (0, 90, 0, 20));
+
+			trackText.text = "AAARRGHHHH!";
+			yield return StartCoroutine (mainCameraScript.moveTo (0, -1, 0, 60, true));
+
+			Destroy (monster);
+		} else {
+			GameObject monster = Instantiate (monsterPrefab) as GameObject;
+			float x0 = -camDistFromFront - 4;
+
+			monster.transform.parent = train.transform;
+			monster.transform.localPosition = new Vector3 (x0, 0, 0);
+			monster.transform.rotation = Quaternion.Euler (270, 90, 0);
+			monster.transform.localScale = new Vector3 (0.5f, 0.5f, 0.5f);
+
+			Vector3 pos=mainCamera.transform.localPosition;
+
+			yield return StartCoroutine (rotateCameraTo (0, 90, 0, 60));
+			yield return StartCoroutine (moveCameraTo(pos.x,pos.y,0,20));
+			yield return StartCoroutine (moveCameraTo (tunnelLength/5, 0, 0, 200, true));
+			yield return StartCoroutine (rotateCameraTo (0, -90, 0, 10));
+
+			for (int i = 0; i < 30; i++) {
+				monster.transform.localPosition = new Vector3 (x0 + i * 0.28f, 0, 0);
+				yield return null;
+			}
+
+			trackText.text = "WHAT IS THAT THING?!";
+			yield return StartCoroutine (mainCameraScript.moveTo (0, -1, 0, 60, true));
+
+			Destroy (monster);
+		}
+
+		finishedMoving = true;
+	}
+
 	// ############################################################
 
 	IEnumerator gotoNextCarriage ()
 	{
 		Vector3 pos=mainCamera.transform.localPosition;
 
+		float z0 = mainCamera.transform.position.z;
+
 		yield return StartCoroutine (rotateCameraTo (0, 90, 0, 60));
 		yield return StartCoroutine (moveCameraTo(pos.x,pos.y,0,20));
 		yield return StartCoroutine (moveCameraTo (tunnelLength/2, 0, 0, 200, true));
-		yield return StartCoroutine (moveCameraTo(0,0,camTrainDisp.z,20,true));
-		yield return StartCoroutine (rotateCameraTo (0, 180, 0, 60));
+
+		if (z0 < 0) {
+			yield return StartCoroutine (moveCameraTo (0, 0, camTrainDisp.z, 20, true));
+			yield return StartCoroutine (rotateCameraTo (0, 180, 0, 60));
+		} else {
+			yield return StartCoroutine (moveCameraTo (0, 0, -camTrainDisp.z, 20, true));
+			yield return StartCoroutine (rotateCameraTo (0, 0, 0, 60));
+		}
+
 		finishedMoving=true;
 	}
 
