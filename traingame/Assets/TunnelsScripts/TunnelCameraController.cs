@@ -6,6 +6,7 @@ public class TunnelCameraController : MonoBehaviour {
 	private bool moving;
 	private bool isFireball;
 	public int rotateFrames, moveFrames;
+	public GameObject controls;
 
 	// Use this for initialization
 	void Start () {
@@ -15,7 +16,10 @@ public class TunnelCameraController : MonoBehaviour {
 	
 	// Update is called once per frame
 	void Update () {
-	
+		if (controls.activeSelf){
+			if (Input.GetKeyDown ("s"))
+				SendMessage ("switchPressed");
+		}
 	}
 
 	public void setFireball(bool fireball)
