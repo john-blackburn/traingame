@@ -212,7 +212,7 @@ public class TunnelGameController : MonoBehaviour
 			mainMenu.SetActive (false);
 				
 			// Loop over tracks
-			for (itrack = 2; itrack < ntracks; itrack++) {
+			for (itrack = 0; itrack < ntracks; itrack++) {
 				trackText.text = "Track: " + itrack.ToString ();
 				int nsequence = 0;
 
