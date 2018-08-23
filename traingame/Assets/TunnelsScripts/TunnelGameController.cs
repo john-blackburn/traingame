@@ -207,7 +207,7 @@ public class TunnelGameController : MonoBehaviour
 			mainMenu.SetActive (false);
 				
 			// Loop over tracks
-			for (itrack = 0; itrack < ntracks; itrack++) {
+			for (itrack = 1; itrack < ntracks; itrack++) {
 				trackText.text = "Track: " + itrack.ToString ();
 				int nsequence = 0;
 
@@ -469,6 +469,8 @@ public class TunnelGameController : MonoBehaviour
 						// ----------------------------------------------------
 
 						int nPreviewChars = track [itrack] [istation] [2] - '0';
+						print ("nPreviewChars"+nPreviewChars);
+						previewCharGroup.SetActive (true);
 
 						for (i = 0; i < 3; i++) {
 							previewChars [0, i].SetActive (false);
@@ -485,14 +487,13 @@ public class TunnelGameController : MonoBehaviour
 							else
 								text = "L";
 
-							Text number = previewChars [0, i].GetComponentInChildren<Text> ();
+							Text number = (previewChars [0, i]).GetComponentInChildren<Text> ();
 							number.text = text;
 
 							number = previewChars [1, i].GetComponentInChildren<Text> ();
 							number.text = text;
 						}
 
-						previewCharGroup.SetActive (true);
 						previewCharGroup.transform.position = 
 					new Vector3 (station.transform.position.x, station.transform.position.y, 0);
 					}
