@@ -639,7 +639,7 @@ public class IOSNativeSettingsEditor : Editor {
 
 			EditorGUILayout.BeginHorizontal();
 			if(GUILayout.Button("Load Example Settings",  GUILayout.Width(140))) {
-				PlayerSettings.bundleIdentifier = "com.stansassets.iosnative.dev";
+				PlayerSettings.applicationIdentifier = "com.stansassets.iosnative.dev";
 				IOSNativeSettings.Instance.InAppProducts.Clear();
 
 				IOSProductTemplate SmallPack =  new IOSProductTemplate();
